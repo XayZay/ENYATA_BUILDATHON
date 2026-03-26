@@ -1,4 +1,4 @@
-export type Role = 'client' | 'provider';
+﻿export type Role = 'client' | 'provider';
 
 export type ProjectStatus =
   | 'draft'
@@ -40,6 +40,18 @@ export interface ProviderProfile {
   availabilityStatus: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProviderSearchResult {
+  userId: string;
+  fullName: string;
+  email: string;
+  handle: string | null;
+  providerCode: string | null;
+  specialty: string | null;
+  availabilityStatus: string | null;
+  preferredPayoutChannel: string | null;
+  bio: string | null;
 }
 
 export interface Project {
@@ -187,3 +199,4 @@ export interface RoutingOption {
   isAvailable: boolean;
   note: string;
 }
+

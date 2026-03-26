@@ -1,4 +1,4 @@
-import type { Config } from 'tailwindcss';
+﻿import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
@@ -9,23 +9,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: '#111827',
-        mist: '#f5f7fb',
-        line: '#d8dee8',
-        brand: '#0d9488',
-        accent: '#1d4ed8',
+        ink: '#0f172a',
+        mist: '#f5f8ff',
+        line: '#d7e1f4',
+        brand: '#1f4fff',
+        accent: '#163bce',
         success: '#15803d',
         warning: '#b45309',
         danger: '#b91c1c'
       },
       boxShadow: {
-        soft: '0 16px 40px rgba(15, 23, 42, 0.08)'
+        soft: '0 24px 72px rgba(15, 23, 42, 0.08)',
+        focus: '0 18px 50px rgba(37, 99, 235, 0.16)'
       },
       borderRadius: {
         xl2: '1.5rem'
       },
       fontFamily: {
-        sans: ['Segoe UI', 'system-ui', 'sans-serif']
+        sans: ['Aptos', 'Segoe UI', 'system-ui', 'sans-serif']
       }
     }
   },
@@ -33,3 +34,4 @@ const config: Config = {
 };
 
 export default config;
+

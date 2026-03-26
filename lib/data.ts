@@ -1,4 +1,4 @@
-import { buildRoutingOptions, getUsdToNgnRate } from '@/lib/monierate';
+﻿import { buildRoutingOptions, getUsdToNgnRate } from '@/lib/monierate';
 import { isInterswitchConfigured } from '@/lib/env';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type {
@@ -15,6 +15,7 @@ import type {
   ProviderDashboardSnapshot,
   ProviderProfile,
   ProviderProfileInput,
+  ProviderSearchResult,
   RoutingOption,
   Transaction,
   User,
@@ -45,8 +46,25 @@ function normalizeHandle(value: string) {
     .replace(/^-+|-+$/g, '');
 }
 
+function sanitizeSearchValue(value: string) {
+  return value.replace(/[%_,()]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function createProviderCode(userId: string) {
   return 'CR-' + userId.slice(0, 4).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+}
+
+function isProviderProfilesUnavailable(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const candidate = error as { code?: string; message?: string };
+  return candidate.code === 'PGRST205' || candidate.message?.includes('provider_profiles') === true;
+}
+
+function getProviderProfilesUnavailableMessage() {
+  return 'Provider profile search is still warming up. If you just ran the migration, refresh Supabase and try again. You can still use the provider email right now.';
 }
 
 function mapUser(row: any): User {
@@ -157,6 +175,20 @@ function mapPayoutRequest(row: any): PayoutRequest {
   };
 }
 
+function toProviderSearchResult(user: User, profile?: ProviderProfile | null): ProviderSearchResult {
+  return {
+    userId: user.id,
+    fullName: user.fullName,
+    email: user.email,
+    handle: profile?.handle ?? null,
+    providerCode: profile?.providerCode ?? null,
+    specialty: profile?.specialty ?? null,
+    availabilityStatus: profile?.availabilityStatus ?? null,
+    preferredPayoutChannel: profile?.preferredPayoutChannel ?? null,
+    bio: profile?.bio ?? null
+  };
+}
+
 async function notify(userId: string, message: string, link: string) {
   const supabase = createAdminClient();
   const { error } = await supabase.from('notifications').insert({ user_id: userId, message, link });
@@ -196,6 +228,10 @@ async function fetchProviderProfilesByUserIds(userIds: string[]) {
 
   const supabase = createAdminClient();
   const { data, error } = await supabase.from('provider_profiles').select('*').in('user_id', uniqueIds);
+  if (isProviderProfilesUnavailable(error)) {
+    return new Map<string, ProviderProfile>();
+  }
+
   assertError(error);
   return new Map(
     (data ?? []).map((row: any) => {
@@ -294,18 +330,27 @@ async function resolveProviderByIdentifier(identifier: string) {
   }
 
   const normalizedHandle = normalizeHandle(trimmed);
-  const providerCode = trimmed.toUpperCase();
+  const profileFilters = [
+    normalizedHandle ? 'handle.eq.' + normalizedHandle : '',
+    'provider_code.eq.' + trimmed.toUpperCase()
+  ].filter(Boolean);
+
   const { data: profile, error: profileError } = await supabase
     .from('provider_profiles')
     .select('*')
-    .or('handle.eq.' + normalizedHandle + ',provider_code.eq.' + providerCode)
+    .or(profileFilters.join(','))
     .maybeSingle();
+
+  if (isProviderProfilesUnavailable(profileError)) {
+    throw new Error(getProviderProfilesUnavailableMessage());
+  }
+
   if (profileError) {
     throw profileError;
   }
 
   if (!profile) {
-    throw new Error('Provider not found. Ask the provider to create a profile first.');
+    throw new Error('Provider not found. Ask the provider to create a profile first or use their exact signup email.');
   }
 
   const { data: providerRow, error: userError } = await supabase.from('users').select('*').eq('id', profile.user_id).eq('role', 'provider').single();
@@ -316,11 +361,76 @@ async function resolveProviderByIdentifier(identifier: string) {
 export async function getProviderProfile(userId: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase.from('provider_profiles').select('*').eq('user_id', userId).maybeSingle();
+  if (isProviderProfilesUnavailable(error)) {
+    return null;
+  }
+
   if (error) {
     throw error;
   }
 
   return data ? mapProviderProfile(data) : null;
+}
+
+export async function searchProviders(query: string): Promise<ProviderSearchResult[]> {
+  const trimmed = sanitizeSearchValue(query);
+  if (trimmed.length < 2) {
+    return [];
+  }
+
+  const normalizedHandle = normalizeHandle(trimmed);
+  const supabase = createAdminClient();
+  const results = new Map<string, ProviderSearchResult>();
+
+  const { data: userRows, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('role', 'provider')
+    .or('full_name.ilike.%' + trimmed + '%,email.ilike.%' + trimmed + '%')
+    .limit(6);
+  assertError(userError);
+
+  const users = (userRows ?? []).map(mapUser);
+  users.forEach((user) => {
+    results.set(user.id, toProviderSearchResult(user));
+  });
+
+  const profileFilters = [
+    normalizedHandle ? 'handle.ilike.%' + normalizedHandle + '%' : '',
+    'provider_code.ilike.%' + trimmed.toUpperCase() + '%',
+    'specialty.ilike.%' + trimmed + '%',
+    'bio.ilike.%' + trimmed + '%'
+  ].filter(Boolean);
+
+  if (profileFilters.length > 0) {
+    const { data: profileRows, error: profileError } = await supabase
+      .from('provider_profiles')
+      .select('*')
+      .or(profileFilters.join(','))
+      .limit(8);
+
+    if (!isProviderProfilesUnavailable(profileError)) {
+      assertError(profileError);
+      const profiles = (profileRows ?? []).map(mapProviderProfile);
+      const missingUserIds = profiles.map((profile) => profile.userId).filter((userId) => !results.has(userId));
+      const missingUsers = await fetchUsersByIds(missingUserIds);
+
+      profiles.forEach((profile) => {
+        const user = users.find((entry) => entry.id === profile.userId) ?? missingUsers.get(profile.userId);
+        if (user) {
+          results.set(user.id, toProviderSearchResult(user, profile));
+        }
+      });
+    }
+  }
+
+  return [...results.values()]
+    .sort((left, right) => {
+      const leftScore = Number(Boolean(left.handle)) + Number(Boolean(left.providerCode));
+      const rightScore = Number(Boolean(right.handle)) + Number(Boolean(right.providerCode));
+      return rightScore - leftScore || left.fullName.localeCompare(right.fullName);
+    })
+    .slice(0, 8);
 }
 
 export async function upsertProviderProfile(input: ProviderProfileInput, viewer: ViewerSession) {
@@ -353,8 +463,12 @@ export async function upsertProviderProfile(input: ProviderProfileInput, viewer:
     )
     .select('*')
     .single();
-  assertError(error);
 
+  if (isProviderProfilesUnavailable(error)) {
+    throw new Error('Provider profiles are not ready in Supabase yet. Apply the latest migration, wait for the schema cache to refresh, and try again.');
+  }
+
+  assertError(error);
   return mapProviderProfile(data);
 }
 
@@ -746,3 +860,4 @@ export async function listPayoutRequests(projectId: string, viewer: ViewerSessio
   assertError(error);
   return (data ?? []).map(mapPayoutRequest);
 }
+

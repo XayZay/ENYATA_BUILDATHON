@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { fundProjectAction } from '@/app/actions';
@@ -22,35 +22,36 @@ export default async function FundProjectPage({ params }: { params: { id: string
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-      <Surface>
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand">Funding</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-ink">Lock the escrow before work begins</h1>
-        <p className="mt-4 text-slate-600">
-          This flow is wired for real payment execution, but actual deposit initiation is currently blocked until your Interswitch account activation is complete.
+      <Surface className="overflow-hidden border-blue-100 bg-[linear-gradient(180deg,#ffffff_0%,#eef5ff_100%)] p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">Funding</p>
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">Lock the escrow before work begins.</h1>
+        <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
+          This flow is wired for real payment execution, but actual deposit initiation stays blocked until your Interswitch account activation is complete.
         </p>
-        <div className="mt-8 rounded-[1.5rem] border border-line bg-slate-50 p-6">
+        <div className="mt-8 rounded-[1.5rem] border border-blue-100 bg-white p-6 shadow-sm">
           <p className="text-sm text-slate-500">Project total</p>
-          <p className="mt-2 text-5xl font-semibold tracking-tight text-ink">{formatUsd(project.totalAmountUsd)}</p>
+          <p className="mt-2 text-5xl font-semibold tracking-tight text-slate-950">{formatUsd(project.totalAmountUsd)}</p>
           <p className="mt-3 text-sm text-slate-500">Milestones: {project.milestones.length}</p>
         </div>
         <form action={fundProjectAction} className="mt-8">
           <input type="hidden" name="projectId" value={project.id} />
-          <button disabled={!paymentsReady} className="rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:bg-slate-300 disabled:text-slate-600">
+          <button disabled={!paymentsReady} className="rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent disabled:bg-slate-300 disabled:text-slate-600">
             {paymentsReady ? 'Initiate Interswitch deposit' : 'Funding unavailable until Interswitch activation'}
           </button>
         </form>
       </Surface>
       <Surface>
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Current status</p>
-        <ol className="mt-6 space-y-4 text-sm text-slate-600">
-          <li>1. The database is live and ready to record real deposit references.</li>
-          <li>2. The UI is prepared to call Interswitch once credentials are available.</li>
-          <li>3. Until then, projects remain in draft because CrossRoute should not fake escrow funding.</li>
+        <ol className="mt-6 space-y-4 text-sm leading-7 text-slate-600">
+          <li>1. The database is live and ready to store a real deposit reference.</li>
+          <li>2. The UI is prepared to call Interswitch once your credentials and activation details arrive.</li>
+          <li>3. Until then, CrossRoute leaves projects in draft rather than faking funded escrow.</li>
         </ol>
-        <Link href={'/dashboard/projects/' + project.id} className="mt-8 inline-flex rounded-full border border-line px-5 py-3 text-sm font-semibold text-ink transition hover:bg-slate-50">
+        <Link href={'/dashboard/projects/' + project.id} className="mt-8 inline-flex rounded-full border border-blue-100 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/70">
           Back to project
         </Link>
       </Surface>
     </div>
   );
 }
+

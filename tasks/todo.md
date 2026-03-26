@@ -1,4 +1,4 @@
-# CrossRoute Realignment Tracker
+﻿# CrossRoute Realignment Tracker
 
 ## Understanding
 
@@ -17,6 +17,13 @@
 - [x] Surface Monierate-driven FX context on the provider dashboard.
 - [x] Verify the slice with lint, production build, and live Supabase table checks.
 
+## Next Slice
+
+- [x] Make provider profile reads fail soft when the schema cache is stale or the table is temporarily unavailable.
+- [x] Add provider search and selection so clients can discover providers by handle, code, or name before creating projects.
+- [x] Refresh landing, auth, dashboard, and project creation UI to a cleaner white-and-blue Stripe-like direction.
+- [x] Verify the slice with lint and a production build.
+
 ## Progress Notes
 
 - Verified the initial Supabase schema exists in the live project.
@@ -24,10 +31,14 @@
 - Provider accounts can now be routed into profile completion before dashboard use.
 - Project creation now targets provider identity instead of email-only coupling.
 - Provider dashboard now shows identity, live FX context, best route snapshot, and delivery pressure.
+- Provider profile reads now fail soft when `provider_profiles` is temporarily unavailable in the Supabase schema cache.
+- Clients can now search providers from the project creation flow through a dedicated provider search API route.
+- The public entry screens and dashboard surfaces now follow a cleaner white-and-blue product direction.
 
 ## Review
 
-- This slice makes the product model more coherent before any UI polish work.
-- The app now better reflects the PRD direction: discoverable providers, role-first onboarding, and provider-specific home value.
-- Verification completed successfully with `cmd /c npm run lint`, `cmd /c npm run build`, and a live query confirming `provider_profiles` exists.
+- This slice closes the reported `provider_profiles` crash path by degrading provider-profile reads safely until the schema cache is ready.
+- Clients now have a real in-product provider discovery flow instead of relying on exact manual identifiers only.
+- The public entry screens, dashboard shell, project creation flow, project detail surface, and payout comparison page now align better with the intended Stripe-like white-and-blue product direction.
+- Verification completed successfully with `cmd /c npm run lint` and `cmd /c npm run build` on March 26, 2026.
 - Remaining major blocker: Interswitch funding and payout execution still need live credentials and integration details.

@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -6,22 +6,30 @@
   color-scheme: light;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background:
-    radial-gradient(circle at top left, rgba(13, 148, 136, 0.1), transparent 32%),
-    radial-gradient(circle at top right, rgba(29, 78, 216, 0.08), transparent 24%),
-    #f5f7fb;
-  color: #111827;
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(191, 219, 254, 0.45), transparent 22%),
+    linear-gradient(180deg, #f8fbff 0%, #f5f8ff 36%, #f9fbff 100%);
+  color: #0f172a;
 }
 
 * {
-  border-color: #d8dee8;
+  border-color: #d7e1f4;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.18);
 }
 
 input,
 textarea,
 select {
-  @apply w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/15;
+  @apply w-full rounded-[1.25rem] border border-line bg-white/95 px-4 py-3 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-4 focus:ring-blue-100;
 }
 
 label {
@@ -31,3 +39,14 @@ label {
 button {
   @apply disabled:cursor-not-allowed disabled:opacity-60;
 }
+
+@layer components {
+  .glass-panel {
+    @apply rounded-[1.75rem] border border-white/80 bg-white/90 shadow-soft backdrop-blur;
+  }
+
+  .dashboard-grid {
+    @apply grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_360px];
+  }
+}
+
