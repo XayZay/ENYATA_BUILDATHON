@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getOptionalViewer } from '@/lib/auth';
-import { logPayoutSelection } from '@/lib/mock-db';
+import { logPayoutSelection } from '@/lib/data';
 
 export async function POST(request: Request) {
   const viewer = await getOptionalViewer();
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   try {
-    const data = logPayoutSelection(body.projectId, viewer, body.platform);
+    const data = await logPayoutSelection(body.projectId, viewer, body.platform);
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to create payout' }, { status: 400 });

@@ -3,12 +3,12 @@ import Link from 'next/link';
 import { markNotificationReadAction } from '@/app/actions';
 import { Surface } from '@/components/dashboard-shell';
 import { getViewerOrRedirect } from '@/lib/auth';
-import { listNotifications } from '@/lib/mock-db';
+import { listNotifications } from '@/lib/data';
 import { formatRelative } from '@/lib/utils';
 
 export default async function NotificationsPage() {
   const viewer = await getViewerOrRedirect();
-  const notifications = listNotifications(viewer.userId);
+  const notifications = await listNotifications(viewer.userId);
 
   return (
     <div className="space-y-8">
@@ -30,7 +30,6 @@ export default async function NotificationsPage() {
               {!notification.read ? (
                 <form action={markNotificationReadAction}>
                   <input type="hidden" name="notificationId" value={notification.id} />
-                  <input type="hidden" name="role" value={viewer.role} />
                   <button className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">Mark as read</button>
                 </form>
               ) : null}

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getOptionalViewer } from '@/lib/auth';
-import { submitChangeOrder } from '@/lib/mock-db';
+import { submitChangeOrder } from '@/lib/data';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   const viewer = await getOptionalViewer();
@@ -11,7 +11,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   const body = await request.json();
   try {
-    const data = submitChangeOrder(params.id, body, viewer);
+    const data = await submitChangeOrder(params.id, body, viewer);
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to submit change order' }, { status: 400 });

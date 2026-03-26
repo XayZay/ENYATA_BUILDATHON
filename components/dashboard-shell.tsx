@@ -8,16 +8,18 @@ interface DashboardShellProps {
   roleLabel: string;
   viewerName: string;
   unreadNotifications: number;
+  profileHref?: string;
   children: ReactNode;
 }
 
-const navItems = [
-  { href: '/dashboard', label: 'Overview' },
-  { href: '/dashboard/projects', label: 'Projects' },
-  { href: '/dashboard/notifications', label: 'Notifications' }
-];
+export function DashboardShell({ roleLabel, viewerName, unreadNotifications, profileHref, children }: DashboardShellProps) {
+  const navItems = [
+    { href: '/dashboard', label: 'Overview' },
+    { href: '/dashboard/projects', label: 'Projects' },
+    ...(profileHref ? [{ href: profileHref, label: 'Profile' }] : []),
+    { href: '/dashboard/notifications', label: 'Notifications' }
+  ];
 
-export function DashboardShell({ roleLabel, viewerName, unreadNotifications, children }: DashboardShellProps) {
   return (
     <div className="min-h-screen bg-mist text-ink">
       <header className="border-b border-line bg-white/90 backdrop-blur">

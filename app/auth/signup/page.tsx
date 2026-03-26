@@ -1,28 +1,40 @@
 import Link from 'next/link';
 
 import { signupAction } from '@/app/actions';
+import type { Role } from '@/lib/types';
 
-export default function SignupPage() {
+export default function SignupPage({ searchParams }: { searchParams?: { error?: string; role?: string } }) {
+  const selectedRole = searchParams?.role === 'client' ? 'client' : 'provider';
+
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-16">
       <div className="w-full max-w-2xl rounded-[2rem] border border-line bg-white p-10 shadow-soft">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-brand">Onboarding</p>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-ink">Create your CrossRoute demo account</h1>
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-ink">
+          Create your {selectedRole === 'provider' ? 'provider' : 'client'} account
+        </h1>
         <p className="mt-4 text-slate-600">
-          Choose the role you want to explore. The role determines the dashboard, project permissions, and payout actions you see.
+          {selectedRole === 'provider'
+            ? 'Providers create a real account first, then complete a public profile so clients can discover and invite them.'
+            : 'Clients create a real account first, then start protected projects by inviting providers with email, handle, or provider code.'}
         </p>
+        {searchParams?.error ? <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{searchParams.error}</p> : null}
         <form action={signupAction} className="mt-8 space-y-5">
           <div>
             <label htmlFor="fullName">Full name</label>
-            <input id="fullName" name="fullName" placeholder="Tunde Provider" />
+            <input id="fullName" name="fullName" placeholder={selectedRole === 'provider' ? 'Tunde Provider' : 'Ada Client'} required />
           </div>
           <div>
             <label htmlFor="email">Email</label>
-            <input id="email" name="email" type="email" placeholder="provider@crossroute.demo" />
+            <input id="email" name="email" type="email" placeholder={selectedRole === 'provider' ? 'provider@example.com' : 'client@example.com'} required />
+          </div>
+          <div>
+            <label htmlFor="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="Create a secure password" minLength={8} required />
           </div>
           <div>
             <label htmlFor="role">Role</label>
-            <select id="role" name="role" defaultValue="provider">
+            <select id="role" name="role" defaultValue={selectedRole}>
               <option value="provider">Provider</option>
               <option value="client">Client</option>
             </select>

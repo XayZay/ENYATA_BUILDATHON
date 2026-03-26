@@ -1,35 +1,33 @@
-# CrossRoute MVP Build Plan
+# CrossRoute Realignment Tracker
 
 ## Understanding
 
-- Build a production-quality MVP foundation for CrossRoute from the provided PRD.
-- Deliver a Next.js 14 App Router project structure that reflects the product routes, role-aware dashboards, escrow lifecycle, change orders, payout routing, and notification concepts.
-- Use mock-backed services and API handlers for the first pass so the app is demoable without waiting on Supabase, Monierate, or Interswitch credentials.
+- CrossRoute is now being built as a real product, not a demo scaffold.
+- The current implementation slice focuses on provider identity, role-first onboarding, and role-aware dashboards before any visual polish pass.
+- Real Supabase auth, persisted data, and live Monierate support are already in place; Interswitch execution remains blocked until account activation details arrive.
 
-## Assumptions
+## Current Slice
 
-- The immediate goal is to create the initial application foundation, not complete live third-party integrations.
-- The MVP should be demo-friendly and easy to extend into real backend integrations after the scaffold is in place.
-- Tailwind CSS, TypeScript, and a clean light UI consistent with the PRD are desired.
-
-## Plan
-
-- [x] Scaffold the Next.js application structure, configuration, and styling foundation.
-- [x] Add shared domain types, mock data, and utility helpers for projects, milestones, change orders, rates, and notifications.
-- [x] Implement core pages: landing, auth placeholders, dashboard home, projects list, project creation, project detail, funding, payout routing, and notifications.
-- [x] Add route handlers that mirror the PRD API surface with deterministic mock responses and validation.
-- [x] Document setup, architecture, environment variables, and next integration steps in the README.
-- [x] Verify the app by installing dependencies, running lint, and building successfully.
+- [x] Realign the PRD around provider identity, role-first entry, and Monierate placement.
+- [x] Add provider profile schema support and database-backed provider identity.
+- [x] Make landing page and signup flow start from role selection.
+- [x] Redirect provider onboarding into provider profile completion.
+- [x] Update project creation to support provider email, handle, or provider code lookup.
+- [x] Restructure dashboard home so provider and client views feel meaningfully different.
+- [x] Surface Monierate-driven FX context on the provider dashboard.
+- [x] Verify the slice with lint, production build, and live Supabase table checks.
 
 ## Progress Notes
 
-- Initial repo inspection complete. Repository currently contains only planning documents and no application scaffold.
-- Created a full Next.js 14 + Tailwind + TypeScript MVP scaffold in the repository root.
-- Added a shared mock domain layer so pages, server actions, and API routes use the same product logic.
-- Verified the scaffold with a clean lint run and production build.
+- Verified the initial Supabase schema exists in the live project.
+- Added and verified the `provider_profiles` table via a second migration.
+- Provider accounts can now be routed into profile completion before dashboard use.
+- Project creation now targets provider identity instead of email-only coupling.
+- Provider dashboard now shows identity, live FX context, best route snapshot, and delivery pressure.
 
 ## Review
 
-- The repository now contains a working, demo-friendly CrossRoute MVP foundation that maps directly to the PRD route structure and product flows.
-- Auth, persistence, FX data, and payment execution are intentionally mocked behind clean boundaries so Supabase, Monierate, and Interswitch can be integrated next without rewriting the UI.
-- Verification completed successfully with `cmd /c npm run lint` and `cmd /c npm run build`.
+- This slice makes the product model more coherent before any UI polish work.
+- The app now better reflects the PRD direction: discoverable providers, role-first onboarding, and provider-specific home value.
+- Verification completed successfully with `cmd /c npm run lint`, `cmd /c npm run build`, and a live query confirming `provider_profiles` exists.
+- Remaining major blocker: Interswitch funding and payout execution still need live credentials and integration details.

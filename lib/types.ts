@@ -28,6 +28,20 @@ export interface User {
   createdAt: string;
 }
 
+export interface ProviderProfile {
+  id: string;
+  userId: string;
+  handle: string;
+  providerCode: string;
+  bio: string;
+  country: string;
+  specialty: string;
+  preferredPayoutChannel: string;
+  availabilityStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -73,7 +87,7 @@ export interface Transaction {
   type: TransactionType;
   amountUsd: number;
   status: TransactionStatus;
-  interswitchReference: string;
+  interswitchReference: string | null;
   createdAt: string;
 }
 
@@ -108,6 +122,7 @@ export interface ViewerSession {
 export interface ProjectDetail extends Project {
   client: User;
   provider: User;
+  providerProfile: ProviderProfile | null;
   milestones: Milestone[];
   changeOrders: ChangeOrder[];
   transactions: Transaction[];
@@ -120,16 +135,35 @@ export interface DashboardSummary {
   releasedUsd: number;
 }
 
+export interface ProviderDashboardSnapshot {
+  currentRate: number;
+  rateSource: 'monierate' | 'fallback';
+  bestRouteLabel: string;
+  bestRouteAmountNgn: number;
+  awaitingFunding: number;
+  pendingDeliveries: number;
+  releasedUsd: number;
+}
+
 export interface CreateProjectInput {
   title: string;
   description: string;
-  providerEmail: string;
+  providerIdentifier: string;
   milestones: Array<{
     title: string;
     description: string;
     amountUsd: number;
     dueDate?: string;
   }>;
+}
+
+export interface ProviderProfileInput {
+  handle: string;
+  bio: string;
+  country: string;
+  specialty: string;
+  preferredPayoutChannel: string;
+  availabilityStatus: string;
 }
 
 export interface ChangeOrderInput {
@@ -150,4 +184,6 @@ export interface RoutingOption {
   processingTime: string;
   isBestValue: boolean;
   isRecommended: boolean;
+  isAvailable: boolean;
+  note: string;
 }

@@ -2,11 +2,11 @@ import Link from 'next/link';
 
 import { ProjectCard } from '@/components/project-card';
 import { getViewerOrRedirect } from '@/lib/auth';
-import { listProjects } from '@/lib/mock-db';
+import { listProjects } from '@/lib/data';
 
 export default async function ProjectsPage() {
   const viewer = await getViewerOrRedirect();
-  const projects = listProjects(viewer);
+  const projects = await listProjects(viewer);
 
   return (
     <div className="space-y-8">
@@ -25,6 +25,7 @@ export default async function ProjectsPage() {
         {projects.map((project) => (
           <ProjectCard key={project.id} project={project} role={viewer.role} />
         ))}
+        {projects.length === 0 ? <p className="text-sm text-slate-500">No projects yet.</p> : null}
       </div>
     </div>
   );

@@ -3,10 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-import { clearViewerSession, getViewerOrRedirect, setViewerSession } from '@/lib/auth';
+import { getViewerOrRedirect, getOptionalViewer } from '@/lib/auth';
 import {
   createProject,
-  getDemoUser,
+  fundProject,
+  getProviderProfile,
   logPayoutSelection,
   markMilestoneDelivered,
   markNotificationRead,
@@ -15,9 +16,10 @@ import {
   respondToChangeOrder,
   startProject,
   submitChangeOrder,
-  fundProject
-} from '@/lib/mock-db';
-import type { PayoutPlatform, Role } from '@/lib/types';
+  upsertProviderProfile
+} from '@/lib/data';
+import { createClient } from '@/lib/supabase/server';
+import type { PayoutPlatform, ProviderProfileInput, Role } from '@/lib/types';
 
 function requireValue(formData: FormData, field: string) {
   const value = formData.get(field)?.toString().trim();
@@ -27,36 +29,97 @@ function requireValue(formData: FormData, field: string) {
   return value;
 }
 
+async function getPostAuthRedirect() {
+  const viewer = await getOptionalViewer();
+  if (!viewer) {
+    return '/dashboard';
+  }
+
+  if (viewer.role === 'provider') {
+    const profile = await getProviderProfile(viewer.userId);
+    if (!profile) {
+      return '/auth/provider-profile';
+    }
+  }
+
+  return '/dashboard';
+}
+
 export async function loginAction(formData: FormData) {
-  const role = requireValue(formData, 'role') as Role;
-  const baseUser = getDemoUser(role);
-  const email = formData.get('email')?.toString().trim() || baseUser.email;
-  const fullName = formData.get('fullName')?.toString().trim() || baseUser.fullName;
+  const email = requireValue(formData, 'email');
+  const password = requireValue(formData, 'password');
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  await setViewerSession({
-    userId: baseUser.id,
-    email,
-    fullName,
-    role
-  });
+  if (error) {
+    redirect('/auth/login?error=' + encodeURIComponent(error.message));
+  }
 
-  redirect('/dashboard');
+  redirect(await getPostAuthRedirect());
 }
 
 export async function signupAction(formData: FormData) {
-  await loginAction(formData);
+  const fullName = requireValue(formData, 'fullName');
+  const email = requireValue(formData, 'email');
+  const password = requireValue(formData, 'password');
+  const role = requireValue(formData, 'role') as Role;
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: fullName,
+        role
+      }
+    }
+  });
+
+  if (error) {
+    redirect('/auth/signup?role=' + encodeURIComponent(role) + '&error=' + encodeURIComponent(error.message));
+  }
+
+  if (!data.session) {
+    redirect('/auth/login?message=' + encodeURIComponent('Account created. Check your email if confirmation is enabled, then log in.'));
+  }
+
+  redirect(role === 'provider' ? '/auth/provider-profile' : '/dashboard');
 }
 
 export async function logoutAction() {
-  await clearViewerSession();
+  const supabase = await createClient();
+  await supabase.auth.signOut();
   redirect('/');
+}
+
+export async function completeProviderProfileAction(formData: FormData) {
+  const viewer = await getViewerOrRedirect();
+  const payload: ProviderProfileInput = {
+    handle: requireValue(formData, 'handle'),
+    bio: formData.get('bio')?.toString().trim() || '',
+    country: requireValue(formData, 'country'),
+    specialty: requireValue(formData, 'specialty'),
+    preferredPayoutChannel: requireValue(formData, 'preferredPayoutChannel'),
+    availabilityStatus: requireValue(formData, 'availabilityStatus')
+  };
+
+  try {
+    await upsertProviderProfile(payload, viewer);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to save provider profile';
+    redirect('/auth/provider-profile?error=' + encodeURIComponent(message));
+  }
+
+  revalidatePath('/dashboard');
+  redirect('/dashboard');
 }
 
 export async function createProjectAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const title = requireValue(formData, 'title');
   const description = requireValue(formData, 'description');
-  const providerEmail = requireValue(formData, 'providerEmail');
+  const providerIdentifier = requireValue(formData, 'providerIdentifier');
 
   const milestones = [1, 2, 3]
     .map((index) => ({
@@ -67,17 +130,21 @@ export async function createProjectAction(formData: FormData) {
     }))
     .filter((milestone) => milestone.title && milestone.amountUsd > 0);
 
-  const project = createProject({ title, description, providerEmail, milestones }, viewer);
-
-  revalidatePath('/dashboard');
-  revalidatePath('/dashboard/projects');
-  redirect('/dashboard/projects/' + project.id);
+  try {
+    const project = await createProject({ title, description, providerIdentifier, milestones }, viewer);
+    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/projects');
+    redirect('/dashboard/projects/' + project.id);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to create project';
+    redirect('/dashboard/projects/new?error=' + encodeURIComponent(message));
+  }
 }
 
 export async function fundProjectAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const projectId = requireValue(formData, 'projectId');
-  fundProject(projectId, viewer);
+  await fundProject(projectId, viewer);
   revalidatePath('/dashboard/projects/' + projectId);
   revalidatePath('/dashboard/projects/' + projectId + '/fund');
   revalidatePath('/dashboard');
@@ -86,7 +153,7 @@ export async function fundProjectAction(formData: FormData) {
 export async function startProjectAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const projectId = requireValue(formData, 'projectId');
-  startProject(projectId, viewer);
+  await startProject(projectId, viewer);
   revalidatePath('/dashboard/projects/' + projectId);
   revalidatePath('/dashboard');
 }
@@ -94,7 +161,7 @@ export async function startProjectAction(formData: FormData) {
 export async function raiseDisputeAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const projectId = requireValue(formData, 'projectId');
-  raiseDispute(projectId, viewer);
+  await raiseDispute(projectId, viewer);
   revalidatePath('/dashboard/projects/' + projectId);
   revalidatePath('/dashboard');
 }
@@ -103,7 +170,7 @@ export async function markMilestoneDeliveredAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const projectId = requireValue(formData, 'projectId');
   const milestoneId = requireValue(formData, 'milestoneId');
-  markMilestoneDelivered(projectId, milestoneId, viewer);
+  await markMilestoneDelivered(projectId, milestoneId, viewer);
   revalidatePath('/dashboard/projects/' + projectId);
 }
 
@@ -111,7 +178,7 @@ export async function releaseMilestoneAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const projectId = requireValue(formData, 'projectId');
   const milestoneId = requireValue(formData, 'milestoneId');
-  releaseMilestone(projectId, milestoneId, viewer);
+  await releaseMilestone(projectId, milestoneId, viewer);
   revalidatePath('/dashboard/projects/' + projectId);
   revalidatePath('/dashboard/projects/' + projectId + '/payout');
   revalidatePath('/dashboard');
@@ -121,7 +188,7 @@ export async function submitChangeOrderAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const projectId = requireValue(formData, 'projectId');
   const milestoneIds = requireValue(formData, 'milestoneIds').split(',').map((entry) => entry.trim()).filter(Boolean);
-  submitChangeOrder(
+  await submitChangeOrder(
     projectId,
     {
       milestoneIds,
@@ -139,7 +206,7 @@ export async function respondToChangeOrderAction(formData: FormData) {
   const projectId = requireValue(formData, 'projectId');
   const changeOrderId = requireValue(formData, 'changeOrderId');
   const decision = requireValue(formData, 'decision') as 'approve' | 'reject';
-  respondToChangeOrder(projectId, changeOrderId, viewer, decision);
+  await respondToChangeOrder(projectId, changeOrderId, viewer, decision);
   revalidatePath('/dashboard/projects/' + projectId);
   revalidatePath('/dashboard');
 }
@@ -148,7 +215,7 @@ export async function requestPayoutAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const projectId = requireValue(formData, 'projectId');
   const platform = requireValue(formData, 'platform') as PayoutPlatform;
-  logPayoutSelection(projectId, viewer, platform);
+  await logPayoutSelection(projectId, viewer, platform);
   revalidatePath('/dashboard/projects/' + projectId + '/payout');
   revalidatePath('/dashboard');
 }
@@ -156,7 +223,7 @@ export async function requestPayoutAction(formData: FormData) {
 export async function markNotificationReadAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const notificationId = requireValue(formData, 'notificationId');
-  markNotificationRead(notificationId, viewer.userId);
+  await markNotificationRead(notificationId, viewer.userId);
   revalidatePath('/dashboard/notifications');
   revalidatePath('/dashboard');
 }

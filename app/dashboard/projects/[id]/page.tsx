@@ -14,7 +14,7 @@ import { Surface } from '@/components/dashboard-shell';
 import { MilestoneTimeline } from '@/components/milestone-timeline';
 import { StatusBadge } from '@/components/status-badge';
 import { getViewerOrRedirect } from '@/lib/auth';
-import { hydrateProject } from '@/lib/mock-db';
+import { hydrateProject } from '@/lib/data';
 import { formatUsd } from '@/lib/utils';
 
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
@@ -22,7 +22,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
 
   let project;
   try {
-    project = hydrateProject(params.id);
+    project = await hydrateProject(params.id, viewer);
   } catch {
     notFound();
   }
@@ -106,7 +106,6 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                 : null}
               <form action={raiseDisputeAction}>
                 <input type="hidden" name="projectId" value={project.id} />
-                <input type="hidden" name="role" value={viewer.role} />
                 <button className="w-full rounded-full border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
                   Raise dispute
                 </button>
@@ -123,11 +122,10 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Change order flow</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink">Agreement Shield</h2>
             <p className="mt-3 text-sm text-slate-600">
-              Scope changes are always logged, even when rejected. This keeps the audit trail intact for both sides.
+              Scope changes are persisted and auditable, even when rejected.
             </p>
             <form action={submitChangeOrderAction} className="mt-6 space-y-4">
               <input type="hidden" name="projectId" value={project.id} />
-              <input type="hidden" name="role" value={viewer.role} />
               <div>
                 <label htmlFor="milestoneIds">Affected milestone</label>
                 <select id="milestoneIds" name="milestoneIds" defaultValue={project.milestones[project.milestones.length - 1]?.id}>
@@ -138,11 +136,11 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
               </div>
               <div>
                 <label htmlFor="newAmountUsd">New amount (USD)</label>
-                <input id="newAmountUsd" name="newAmountUsd" type="number" min="0" step="0.01" placeholder="800" />
+                <input id="newAmountUsd" name="newAmountUsd" type="number" min="0" step="0.01" placeholder="800" required />
               </div>
               <div>
                 <label htmlFor="reason">Reason</label>
-                <textarea id="reason" name="reason" rows={3} placeholder="Explain the scope shift or extra work requested." />
+                <textarea id="reason" name="reason" rows={3} placeholder="Explain the scope shift or extra work requested." required />
               </div>
               <button className="w-full rounded-full bg-white px-4 py-3 text-sm font-semibold text-ink ring-1 ring-line transition hover:bg-slate-50">
                 Submit change order
@@ -158,14 +156,12 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                         <input type="hidden" name="projectId" value={project.id} />
                         <input type="hidden" name="changeOrderId" value={changeOrder.id} />
                         <input type="hidden" name="decision" value="approve" />
-                        <input type="hidden" name="role" value={viewer.role} />
                         <button className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">Approve</button>
                       </form>
                       <form action={respondToChangeOrderAction}>
                         <input type="hidden" name="projectId" value={project.id} />
                         <input type="hidden" name="changeOrderId" value={changeOrder.id} />
                         <input type="hidden" name="decision" value="reject" />
-                        <input type="hidden" name="role" value={viewer.role} />
                         <button className="rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:bg-white">Reject</button>
                       </form>
                     </div>

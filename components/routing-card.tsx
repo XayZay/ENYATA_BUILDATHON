@@ -27,11 +27,12 @@ export function RoutingCard({ option, projectId }: { option: RoutingOption; proj
       </div>
       <div className="rounded-3xl bg-slate-50 p-4 text-sm text-slate-600">
         <p>Processing time: {option.processingTime}</p>
+        <p className="mt-2">{option.note}</p>
       </div>
       <form action={requestPayoutAction} className="mt-auto">
         <input type="hidden" name="projectId" value={projectId} />
         <input type="hidden" name="platform" value={option.platform} />
-        <button className="w-full rounded-full bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+        <button disabled={!option.isAvailable} className="w-full rounded-full bg-ink px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:bg-slate-300 disabled:text-slate-600">
           {option.platform === 'interswitch' ? 'Withdraw via Interswitch' : 'Log ' + option.label + ' preference'}
         </button>
       </form>

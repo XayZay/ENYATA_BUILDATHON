@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getOptionalViewer } from '@/lib/auth';
-import { getRoutingOptions } from '@/lib/mock-db';
+import { getRoutingOptions } from '@/lib/data';
 
 export async function GET(request: Request) {
   const viewer = await getOptionalViewer();
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    return NextResponse.json({ data: getRoutingOptions(projectId, viewer) });
+    return NextResponse.json({ data: await getRoutingOptions(projectId, viewer) });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to fetch rates' }, { status: 400 });
   }

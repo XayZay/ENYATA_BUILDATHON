@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getOptionalViewer } from '@/lib/auth';
-import { raiseDispute, startProject } from '@/lib/mock-db';
+import { raiseDispute, startProject } from '@/lib/data';
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const viewer = await getOptionalViewer();
@@ -13,9 +13,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   try {
     const data =
       body.status === 'in_progress'
-        ? startProject(params.id, viewer)
+        ? await startProject(params.id, viewer)
         : body.status === 'disputed'
-          ? raiseDispute(params.id, viewer)
+          ? await raiseDispute(params.id, viewer)
           : null;
 
     if (!data) {

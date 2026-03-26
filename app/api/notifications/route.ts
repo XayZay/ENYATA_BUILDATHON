@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getOptionalViewer } from '@/lib/auth';
-import { listNotifications } from '@/lib/mock-db';
+import { listNotifications } from '@/lib/data';
 
 export async function GET() {
   const viewer = await getOptionalViewer();
@@ -9,5 +9,5 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  return NextResponse.json({ data: listNotifications(viewer.userId) });
+  return NextResponse.json({ data: await listNotifications(viewer.userId) });
 }

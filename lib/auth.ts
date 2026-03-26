@@ -1,39 +1,58 @@
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { User } from '@supabase/supabase-js';
 
-import { getDemoUser } from '@/lib/mock-db';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import type { Role, ViewerSession } from '@/lib/types';
 
-const SESSION_COOKIE = 'crossroute-session';
+async function ensureProfile(user: User) {
+  const admin = createAdminClient();
+  const role = (user.user_metadata.role === 'provider' ? 'provider' : 'client') as Role;
+  const fullName = typeof user.user_metadata.full_name === 'string' && user.user_metadata.full_name.trim()
+    ? user.user_metadata.full_name.trim()
+    : user.email?.split('@')[0] ?? 'CrossRoute User';
 
-function normalizeViewer(payload: Partial<ViewerSession> | null | undefined): ViewerSession | null {
-  if (!payload?.role) {
-    return null;
+  const payload = {
+    id: user.id,
+    email: user.email ?? '',
+    full_name: fullName,
+    role
+  };
+
+  const { data, error } = await admin
+    .from('users')
+    .upsert(payload, { onConflict: 'id' })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw error;
   }
 
-  const fallback = getDemoUser(payload.role as Role);
+  return data;
+}
 
+function toViewerSession(profile: { id: string; email: string; full_name: string; role: Role }): ViewerSession {
   return {
-    userId: payload.userId ?? fallback.id,
-    email: payload.email ?? fallback.email,
-    fullName: payload.fullName ?? fallback.fullName,
-    role: payload.role as Role
+    userId: profile.id,
+    email: profile.email,
+    fullName: profile.full_name,
+    role: profile.role
   };
 }
 
 export async function getOptionalViewer(): Promise<ViewerSession | null> {
-  const cookieStore = cookies();
-  const raw = cookieStore.get(SESSION_COOKIE)?.value;
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
 
-  if (!raw) {
+  if (!user) {
     return null;
   }
 
-  try {
-    return normalizeViewer(JSON.parse(raw));
-  } catch {
-    return null;
-  }
+  const profile = await ensureProfile(user);
+  return toViewerSession(profile);
 }
 
 export async function getViewerOrRedirect(): Promise<ViewerSession> {
@@ -43,20 +62,4 @@ export async function getViewerOrRedirect(): Promise<ViewerSession> {
   }
 
   return viewer;
-}
-
-export async function setViewerSession(viewer: ViewerSession) {
-  const cookieStore = cookies();
-  cookieStore.set(SESSION_COOKIE, JSON.stringify(viewer), {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: false,
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7
-  });
-}
-
-export async function clearViewerSession() {
-  const cookieStore = cookies();
-  cookieStore.delete(SESSION_COOKIE);
 }
