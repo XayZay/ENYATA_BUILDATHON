@@ -1,6 +1,7 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 
 import { signupAction } from '@/app/actions';
+import { PendingSubmitButton } from '@/components/pending-submit-button';
 
 export default function SignupPage({ searchParams }: { searchParams?: { error?: string; role?: string } }) {
   const selectedRole = searchParams?.role === 'client' ? 'client' : 'provider';
@@ -24,7 +25,7 @@ export default function SignupPage({ searchParams }: { searchParams?: { error?: 
                   : 'Clients sign up first, then create projects by selecting providers inside CrossRoute with milestone-based funding terms.'}
               </p>
             </div>
-            <div className="rounded-[1.7rem] border border-white/20 bg-white/12 p-6 backdrop-blur mt-4 xl:-mt-10 ">
+            <div className="mt-4 rounded-[1.7rem] border border-white/20 bg-white/12 p-6 backdrop-blur xl:-mt-10 ">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Account type</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <Link href="/auth/signup?role=client" className={`rounded-[1.3rem] border px-4 py-4 text-sm font-semibold transition ${selectedRole === 'client' ? 'border-white bg-white text-blue-700' : 'border-white/20 bg-white/10 text-white hover:bg-white/15'}`}>
@@ -71,9 +72,12 @@ export default function SignupPage({ searchParams }: { searchParams?: { error?: 
                   <option value="client">Client</option>
                 </select>
               </div>
-              <button className="w-full rounded-full bg-brand px-5 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(37,99,235,0.22)] transition hover:bg-accent">
+              <PendingSubmitButton
+                pendingLabel="Creating account..."
+                className="w-full rounded-full bg-brand px-5 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(37,99,235,0.22)] transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-80"
+              >
                 Create account
-              </button>
+              </PendingSubmitButton>
             </form>
             <div className="mt-8 flex flex-wrap items-center gap-3 text-sm text-slate-500">
               <span>Already have access?</span>
@@ -85,4 +89,3 @@ export default function SignupPage({ searchParams }: { searchParams?: { error?: 
     </main>
   );
 }
-

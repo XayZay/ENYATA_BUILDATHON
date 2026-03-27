@@ -1,5 +1,5 @@
 import { env, isMonierateConfigured } from '@/lib/env';
-import type { PayoutPlatform, RoutingOption } from '@/lib/types';
+import type { PayoutPlatform, PayoutTimingInsight, RateTrendPoint, RoutingOption } from '@/lib/types';
 
 type PlatformMeta = {
   label: string;
@@ -10,10 +10,10 @@ type PlatformMeta = {
 };
 
 const PLATFORM_META: Record<PayoutPlatform, PlatformMeta> = {
-  cleva:       { label: 'Cleva',       feePercent: 0.005,  flatFeeUsd: 1.5,  processingTime: '2-6 hours',                  apiCode: 'cleva' },
-  grey:        { label: 'Grey',        feePercent: 0.01,   flatFeeUsd: 0,    processingTime: 'Instant to 2 hours',         apiCode: 'grey' },
-  payoneer:    { label: 'Payoneer',    feePercent: 0.02,   flatFeeUsd: 0,    processingTime: 'Same day',                   apiCode: 'payoneer' },
-  quidax:      { label: 'Quidax',      feePercent: 0.015,  flatFeeUsd: 0,    processingTime: '5-20 minutes',               apiCode: 'quidax' },
+  cleva: { label: 'Cleva', feePercent: 0.005, flatFeeUsd: 1.5, processingTime: '2-6 hours', apiCode: 'cleva' },
+  grey: { label: 'Grey', feePercent: 0.01, flatFeeUsd: 0, processingTime: 'Instant to 2 hours', apiCode: 'grey' },
+  payoneer: { label: 'Payoneer', feePercent: 0.02, flatFeeUsd: 0, processingTime: 'Same day', apiCode: 'payoneer' },
+  quidax: { label: 'Quidax', feePercent: 0.015, flatFeeUsd: 0, processingTime: '5-20 minutes', apiCode: 'quidax' },
   interswitch: { label: 'Interswitch', feePercent: 0.0025, flatFeeUsd: 0.75, processingTime: 'Pending account activation', apiCode: 'interswitch' }
 };
 
@@ -35,6 +35,80 @@ interface MonieratePlatformsResponse {
 
 interface OpenErResponse {
   rates?: Record<string, number>;
+}
+
+function average(values: number[]) {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function toRateTrendPoint(date: string, rate: unknown) {
+  const normalizedRate = typeof rate === 'string' ? parseFloat(rate) : typeof rate === 'number' ? rate : NaN;
+  if (!date || Number.isNaN(normalizedRate) || normalizedRate <= 0) {
+    return null;
+  }
+
+  return {
+    date,
+    rate: normalizedRate
+  } satisfies RateTrendPoint;
+}
+
+function parseHistoryPoints(payload: unknown): RateTrendPoint[] {
+  const points: RateTrendPoint[] = [];
+  const candidate = payload as
+    | {
+        data?: {
+          history?: unknown;
+          rates?: unknown;
+          data?: unknown;
+        };
+      }
+    | undefined;
+
+  const sources = [candidate?.data?.history, candidate?.data?.rates, candidate?.data?.data];
+
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+
+    if (Array.isArray(source)) {
+      for (const entry of source) {
+        if (!entry || typeof entry !== 'object') {
+          continue;
+        }
+
+        const row = entry as { date?: string; day?: string; rate?: unknown; value?: unknown; ngn?: unknown; rates?: Record<string, unknown> };
+        const point = toRateTrendPoint(row.date ?? row.day ?? '', row.rate ?? row.value ?? row.ngn ?? row.rates?.NGN);
+        if (point) {
+          points.push(point);
+        }
+      }
+    } else if (typeof source === 'object') {
+      for (const [date, value] of Object.entries(source)) {
+        if (typeof value === 'object' && value) {
+          const nested = value as { rate?: unknown; value?: unknown; ngn?: unknown; rates?: Record<string, unknown> };
+          const point = toRateTrendPoint(date, nested.rate ?? nested.value ?? nested.ngn ?? nested.rates?.NGN);
+          if (point) {
+            points.push(point);
+          }
+        } else {
+          const point = toRateTrendPoint(date, value);
+          if (point) {
+            points.push(point);
+          }
+        }
+      }
+    }
+  }
+
+  return points
+    .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime())
+    .slice(-7);
 }
 
 async function getMonierateRates() {
@@ -67,17 +141,47 @@ async function getMonierateRates() {
   if (platformsRes.ok) {
     const platformsPayload = (await platformsRes.json()) as MonieratePlatformsResponse;
     if (platformsPayload.data?.platforms && Array.isArray(platformsPayload.data.platforms)) {
-      for (const p of platformsPayload.data.platforms) {
-        // Temporary: log raw codes so you can verify apiCode values in PLATFORM_META, then remove
-        console.log('Monierate platform code:', p.code, '| sell:', p.sell);
-        if (p.code && p.sell) {
-          platformRates[p.code.toLowerCase()] = typeof p.sell === 'string' ? parseFloat(p.sell) : p.sell;
+      for (const platform of platformsPayload.data.platforms) {
+        if (platform.code && platform.sell) {
+          platformRates[platform.code.toLowerCase()] =
+            typeof platform.sell === 'string' ? parseFloat(platform.sell) : platform.sell;
         }
       }
     }
   }
 
   return { rate: baseRate, platformRates };
+}
+
+async function getMonierateHistory() {
+  if (!isMonierateConfigured()) {
+    throw new Error('MONIERATE_API_KEY is not configured');
+  }
+
+  const endpoints = [
+    'https://api.monierate.com/core/rates/history.json?ticker=usdngn',
+    'https://api.monierate.com/core/rates/history.json?base=USD&symbols=NGN',
+    'https://api.monierate.com/core/rates/history.json?base=USD&symbol=NGN'
+  ];
+
+  for (const endpoint of endpoints) {
+    const response = await fetch(endpoint, {
+      headers: { api_key: env.monierateApiKey! },
+      next: { revalidate: 21600 }
+    });
+
+    if (!response.ok) {
+      continue;
+    }
+
+    const payload = await response.json();
+    const points = parseHistoryPoints(payload);
+    if (points.length >= 3) {
+      return points;
+    }
+  }
+
+  throw new Error('Monierate history did not return enough points');
 }
 
 async function getFallbackUsdNgnRate() {
@@ -121,10 +225,7 @@ export async function buildRoutingOptions(amountUsd: number, interswitchAvailabl
   const options = (Object.keys(PLATFORM_META) as PayoutPlatform[]).map((platform) => {
     const meta = PLATFORM_META[platform];
     const feeUsd = amountUsd * meta.feePercent + meta.flatFeeUsd;
-
-    // Use apiCode to look up the live sell rate from the Monierate platforms response
     const conversionRate = rateInfo.platformRates[meta.apiCode] ?? rateInfo.rate;
-
     const amountNgn = Math.max(0, (amountUsd - feeUsd) * conversionRate);
     const isAvailable = platform !== 'interswitch' ? true : interswitchAvailable;
 
@@ -151,9 +252,89 @@ export async function buildRoutingOptions(amountUsd: number, interswitchAvailabl
     } satisfies RoutingOption;
   });
 
-  const bestValue = [...options].sort((a, b) => b.amountNgn - a.amountNgn)[0];
+  const bestValue = [...options].sort((left, right) => right.amountNgn - left.amountNgn)[0];
   return options.map((option) => ({
     ...option,
     isBestValue: option.platform === bestValue.platform
   }));
+}
+
+export async function buildPayoutTimingInsight(option: RoutingOption): Promise<PayoutTimingInsight> {
+  const latestRate = option.rate;
+  const netUsd = Math.max(0, option.amountUsd - option.feeUsd);
+
+  try {
+    const trendPoints = await getMonierateHistory();
+    const firstRate = trendPoints[0]?.rate ?? latestRate;
+    const trailingAverageRate = average(trendPoints.map((point) => point.rate));
+    const sevenDayChangePercent = firstRate > 0 ? ((latestRate - firstRate) / firstRate) * 100 : 0;
+    const dailyMomentumPercent = trendPoints.length > 1 ? sevenDayChangePercent / (trendPoints.length - 1) : 0;
+    const threeDayProjectionPercent = dailyMomentumPercent * 3;
+    const projectedRate = latestRate * (1 + threeDayProjectionPercent / 100);
+    const projectedAmountNgn = Math.max(0, netUsd * projectedRate);
+    const projectedDifferenceNgn = projectedAmountNgn - option.amountNgn;
+    const upsideThreshold = Math.max(option.amountNgn * 0.01, 15000);
+    const recommendation = projectedDifferenceNgn > upsideThreshold ? 'hold' : 'transfer_now';
+    const absoluteChange = Math.abs(sevenDayChangePercent);
+    const confidence = absoluteChange >= 2 ? 'high' : absoluteChange >= 0.9 ? 'medium' : 'low';
+
+    if (recommendation === 'hold') {
+      return {
+        recommendation,
+        confidence,
+        headline: 'Hold for now',
+        summary: 'Recent USD to NGN momentum is still pointing upward, so waiting a little longer may improve your naira outcome.',
+        note: 'This is a directional signal from recent rate movement, not a guaranteed forecast.',
+        source: 'monierate',
+        signalLabel: 'Upward momentum',
+        latestRate,
+        sevenDayChangePercent,
+        threeDayProjectionPercent,
+        trailingAverageRate,
+        projectedRate,
+        estimatedNowAmountNgn: option.amountNgn,
+        projectedAmountNgn,
+        projectedDifferenceNgn,
+        trendPoints
+      };
+    }
+
+    return {
+      recommendation,
+      confidence,
+      headline: 'Transfer now',
+      summary: 'There is no strong short-term upside signal right now, so settling through Interswitch now is the safer call.',
+      note: 'This is a directional signal from recent rate movement, not a guaranteed forecast.',
+      source: 'monierate',
+      signalLabel: absoluteChange < 0.9 ? 'Flat momentum' : 'Soft or negative momentum',
+      latestRate,
+      sevenDayChangePercent,
+      threeDayProjectionPercent,
+      trailingAverageRate,
+      projectedRate,
+      estimatedNowAmountNgn: option.amountNgn,
+      projectedAmountNgn,
+      projectedDifferenceNgn,
+      trendPoints
+    };
+  } catch {
+    return {
+      recommendation: 'transfer_now',
+      confidence: 'low',
+      headline: 'Transfer now',
+      summary: 'Recent trend data is unavailable, so the product falls back to the live rate and avoids speculating on a better future entry point.',
+      note: 'Once Monierate history is available, this panel can make stronger timing recommendations.',
+      source: 'fallback',
+      signalLabel: 'No trend signal',
+      latestRate,
+      sevenDayChangePercent: 0,
+      threeDayProjectionPercent: 0,
+      trailingAverageRate: latestRate,
+      projectedRate: latestRate,
+      estimatedNowAmountNgn: option.amountNgn,
+      projectedAmountNgn: option.amountNgn,
+      projectedDifferenceNgn: 0,
+      trendPoints: []
+    };
+  }
 }

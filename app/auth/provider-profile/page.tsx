@@ -1,6 +1,7 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 
 import { completeProviderProfileAction } from '@/app/actions';
+import { PendingSubmitButton } from '@/components/pending-submit-button';
 import { getViewerOrRedirect } from '@/lib/auth';
 import { getProviderProfile } from '@/lib/data';
 
@@ -84,9 +85,12 @@ export default async function ProviderProfilePage({ searchParams }: { searchPara
                   </select>
                 </div>
               </div>
-              <button className="w-full rounded-full bg-brand px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(37,99,235,0.22)] transition hover:bg-accent">
+              <PendingSubmitButton
+                pendingLabel="Saving profile..."
+                className="w-full rounded-full bg-brand px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(37,99,235,0.22)] transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-80"
+              >
                 Save provider profile
-              </button>
+              </PendingSubmitButton>
             </form>
           </div>
         </section>
@@ -94,4 +98,3 @@ export default async function ProviderProfilePage({ searchParams }: { searchPara
     </main>
   );
 }
-

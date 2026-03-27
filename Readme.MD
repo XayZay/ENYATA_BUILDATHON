@@ -1,12 +1,12 @@
 # CrossRoute
 
-CrossRoute is a Next.js 14 MVP foundation for a dynamic escrow and cross-border payout routing platform built for the Interswitch x Enyata hackathon.
+CrossRoute is a Next.js 14 MVP foundation for a dynamic escrow and cross-border settlement timing platform built for the Interswitch x Enyata hackathon.
 
 ## What is included
 
 - Landing page and demo auth flow with role-aware sessions
 - Dashboard overview for client and provider journeys
-- Project list, project creation, project detail, funding, payout routing, and notifications pages
+- Project list, project creation, project detail, funding, payout timing, and notifications pages
 - In-memory mock domain layer for projects, milestones, change orders, transactions, payouts, and notifications
 - Next.js API route handlers that mirror the PRD endpoints
 - Tailwind-based light UI aligned to the product brief
@@ -53,7 +53,7 @@ This scaffold uses a cookie-backed demo session instead of Supabase auth so the 
 - escrow funding
 - milestone delivery and release
 - change order submission and approval
-- payout route logging
+- payout timing logging
 - notifications
 
 Those functions are shared by both server actions and API routes so the product rules stay consistent.

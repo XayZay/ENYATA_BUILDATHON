@@ -1,4 +1,4 @@
-﻿export type Role = 'client' | 'provider';
+export type Role = 'client' | 'provider';
 
 export type ProjectStatus =
   | 'draft'
@@ -19,6 +19,8 @@ export type ChangeOrderStatus =
   | 'rejected';
 export type PayoutPlatform = 'interswitch' | 'cleva' | 'grey' | 'payoneer' | 'quidax';
 export type PayoutStatus = 'pending' | 'processing' | 'completed';
+export type TimingRecommendation = 'hold' | 'transfer_now';
+export type TimingConfidence = 'high' | 'medium' | 'low';
 
 export interface User {
   id: string;
@@ -200,3 +202,26 @@ export interface RoutingOption {
   note: string;
 }
 
+export interface RateTrendPoint {
+  date: string;
+  rate: number;
+}
+
+export interface PayoutTimingInsight {
+  recommendation: TimingRecommendation;
+  confidence: TimingConfidence;
+  headline: string;
+  summary: string;
+  note: string;
+  source: 'monierate' | 'fallback';
+  signalLabel: string;
+  latestRate: number;
+  sevenDayChangePercent: number;
+  threeDayProjectionPercent: number;
+  trailingAverageRate: number;
+  projectedRate: number;
+  estimatedNowAmountNgn: number;
+  projectedAmountNgn: number;
+  projectedDifferenceNgn: number;
+  trendPoints: RateTrendPoint[];
+}

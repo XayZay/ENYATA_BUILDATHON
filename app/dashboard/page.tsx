@@ -26,7 +26,7 @@ export default async function DashboardPage() {
               Work the active pipeline and watch what released USD means in NGN today.
             </h1>
             <p className="mt-5 max-w-2xl text-sm leading-8 text-blue-100">
-              Your CrossRoute workspace shows the projects waiting for action, your searchable identity, and the strongest payout signal before you reach the routing screen.
+              Your CrossRoute workspace shows the projects waiting for action, your searchable identity, and the live Interswitch settlement picture before you open a payout.
             </p>
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               <div className="rounded-[1.5rem] border border-white/15 bg-white/10 p-5 backdrop-blur">
@@ -35,7 +35,7 @@ export default async function DashboardPage() {
                 <p className="mt-2 text-sm text-blue-100">Source: {snapshot.rateSource}</p>
               </div>
               <div className="rounded-[1.5rem] border border-white/15 bg-white/10 p-5 backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Best route</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Settlement rail</p>
                 <p className="mt-3 text-3xl font-semibold tracking-tight">{snapshot.bestRouteLabel}</p>
                 <p className="mt-2 text-sm text-blue-100">{formatNgn(snapshot.bestRouteAmountNgn)} estimated</p>
               </div>
@@ -63,7 +63,7 @@ export default async function DashboardPage() {
             <SummaryCard
               eyebrow="Released balance"
               value={formatUsd(snapshot.releasedUsd)}
-              detail="Open any released project to compare routing options in detail."
+              detail="Open any released project to view the Interswitch payout timing recommendation."
               accent={<span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Ready</span>}
             />
           </div>

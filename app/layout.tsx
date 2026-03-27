@@ -22,7 +22,7 @@ const satoshi = localFont({
 
 export const metadata: Metadata = {
   title: 'CrossRoute',
-  description: 'Dynamic escrow and cross-border payout routing for USD to NGN freelance work.'
+  description: 'Dynamic escrow and settlement timing intelligence for USD to NGN freelance work.'
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -531,13 +531,13 @@ export async function getProviderDashboardSnapshot(viewer: ViewerSession): Promi
   const awaitingFunding = projects.filter((project) => project.status === 'draft' || project.status === 'funded').length;
   const rateInfo = await getUsdToNgnRate();
   const options = await buildRoutingOptions(Math.max(releasedUsd, 100), isInterswitchConfigured());
-  const bestRoute = options.find((entry) => entry.isBestValue) ?? options[0];
+  const interswitchRoute = options.find((entry) => entry.platform === 'interswitch') ?? options[0];
 
   return {
     currentRate: rateInfo.rate,
     rateSource: rateInfo.source,
-    bestRouteLabel: bestRoute.label,
-    bestRouteAmountNgn: bestRoute.amountNgn,
+    bestRouteLabel: 'Interswitch',
+    bestRouteAmountNgn: interswitchRoute.amountNgn,
     awaitingFunding,
     pendingDeliveries,
     releasedUsd
@@ -807,7 +807,7 @@ export async function respondToChangeOrder(projectId: string, changeOrderId: str
 export async function getRoutingOptions(projectId: string, viewer: ViewerSession): Promise<RoutingOption[]> {
   const project = await hydrateProject(projectId, viewer);
   if (viewer.role !== 'provider' || project.providerId !== viewer.userId) {
-    throw new Error('Only the provider can view payout routing');
+    throw new Error('Only the provider can view payout timing');
   }
 
   const amountUsd = project.milestones.filter((entry) => entry.status === 'released').reduce((sum, milestone) => sum + milestone.amountUsd, 0);

@@ -1,6 +1,7 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 
 import { loginAction } from '@/app/actions';
+import { PendingSubmitButton } from '@/components/pending-submit-button';
 
 export default function LoginPage({ searchParams }: { searchParams?: { error?: string; message?: string } }) {
   return (
@@ -12,11 +13,10 @@ export default function LoginPage({ searchParams }: { searchParams?: { error?: s
               <Link href="/" className="text-3xl font-semibold tracking-tight text-white">CrossRoute</Link>
               <p className="mt-2 text-xs font-semibold uppercase tracking-[0.28em] text-blue-100">Secure freelance payments</p>
               <h1 className="mt-16 max-w-xl text-5xl font-semibold leading-[1.02] tracking-tight">
-                Sign in to manage global projects, approvals, and payout routes.
+                Sign in to manage global projects, approvals, and settlement timing.
               </h1>
-             
             </div>
-            <div className="rounded-[1.7rem] border border-white/20 bg-white/12 p-6 backdrop-blur mt-6 lg:mt-10">
+            <div className="mt-6 rounded-[1.7rem] border border-white/20 bg-white/12 p-6 backdrop-blur lg:mt-10">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Why this matters</p>
               <p className="mt-3 text-2xl font-semibold tracking-tight">One place for identity, escrow, and payout intelligence.</p>
               <p className="mt-4 text-sm leading-7 text-blue-100">
@@ -45,9 +45,12 @@ export default function LoginPage({ searchParams }: { searchParams?: { error?: s
                 <label htmlFor="password">Password</label>
                 <input id="password" name="password" type="password" placeholder="Enter your password" required />
               </div>
-              <button className="w-full rounded-full bg-brand px-5 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(37,99,235,0.22)] transition hover:bg-accent">
+              <PendingSubmitButton
+                pendingLabel="Signing in..."
+                className="w-full rounded-full bg-brand px-5 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(37,99,235,0.22)] transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-80"
+              >
                 Continue to dashboard
-              </button>
+              </PendingSubmitButton>
             </form>
             <div className="mt-8 flex flex-wrap items-center gap-3 text-sm text-slate-500">
               <span>Need an account?</span>
@@ -61,6 +64,3 @@ export default function LoginPage({ searchParams }: { searchParams?: { error?: s
     </main>
   );
 }
-
-
-

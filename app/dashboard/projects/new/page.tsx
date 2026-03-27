@@ -26,7 +26,7 @@ export default async function NewProjectPage({ searchParams }: { searchParams?: 
           <div className="space-y-4 px-6 py-6 text-sm leading-7 text-slate-600">
             <p>1. The provider creates a CrossRoute account and completes a public profile.</p>
             <p>2. The client searches by email, handle, provider code, or specialty.</p>
-            <p>3. The project becomes the shared source of truth for funding, approvals, and payout routing.</p>
+            <p>3. The project becomes the shared source of truth for funding, approvals, and settlement timing decisions.</p>
           </div>
         </Surface>
       </section>

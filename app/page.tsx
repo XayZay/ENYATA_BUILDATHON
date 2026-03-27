@@ -22,10 +22,10 @@ export default function HomePage() {
               Built for Dollar to Naira Payments
             </p>
             <h1 className="mt-8 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-tight text-slate-950 sm:text-6xl">
-              Protect global freelance work with dynamic escrow and smarter FX routing.
+              Protect global freelance work with dynamic escrow and smarter settlement timing.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              CrossRoute helps international clients fund projects safely in USD while Nigerian providers manage scope changes and compare live payout routes in NGN when the work is released.
+              CrossRoute helps international clients fund projects safely in USD while Nigerian providers manage scope changes and decide whether to settle now or later in NGN when work is released.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               <Link href="/auth/signup?role=client" className="rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_40px_rgba(37,99,235,0.24)] transition hover:bg-accent">
@@ -44,7 +44,7 @@ export default function HomePage() {
               <div className="rounded-[1.5rem] border border-blue-100 bg-white px-5 py-5 shadow-soft">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">Routing</p>
                 <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">5</p>
-                <p className="mt-2 text-sm text-slate-600">Provider payout routes compared live for the USD to NGN corridor.</p>
+                <p className="mt-2 text-sm text-slate-600">Provider settlement timing signals for the USD to NGN corridor.</p>
               </div>
               <div className="rounded-[1.5rem] border border-blue-100 bg-white px-5 py-5 shadow-soft">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">Identity</p>
@@ -63,7 +63,7 @@ export default function HomePage() {
                   Providers see current USD to NGN context, best value route, and a direct record of the payout option they selected.
                 </p>
                 <div className="mt-10 rounded-[1.6rem] bg-white/12 p-5 backdrop-blur">
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Current best route</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Settle now or later</p>
                   <p className="mt-3 text-4xl font-semibold tracking-tight">Wise</p>
                   <p className="mt-2 text-sm text-blue-100">Estimated ?1.48M on a released $1,200 milestone set.</p>
                 </div>
@@ -101,7 +101,7 @@ export default function HomePage() {
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">Provider account</p>
             <h3 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">Get discovered and optimize what your released USD becomes in NGN.</h3>
             <p className="mt-4 text-base leading-8 text-slate-600">
-              Complete a provider profile, receive invites through your handle or provider code, and compare payout routes from your dashboard before you withdraw.
+              Complete a provider profile, receive invites through your handle or provider code, and review settlement timing signals from your dashboard before you withdraw.
             </p>
             <span className="mt-8 inline-flex text-sm font-semibold text-blue-700">Join as provider ?</span>
           </Link>
@@ -122,7 +122,7 @@ export default function HomePage() {
             <div className="px-6 py-8">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Step 3</p>
               <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Optimize the payout</h3>
-              <p className="mt-4 text-sm leading-7 text-slate-600">When funds are released, the provider compares live routing options and chooses the strongest NGN outcome.</p>
+              <p className="mt-4 text-sm leading-7 text-slate-600">When funds are released, the provider gets a timing signal on whether settling now or waiting a little longer could improve the NGN outcome.</p>
             </div>
           </div>
         </section>

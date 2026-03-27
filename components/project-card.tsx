@@ -1,5 +1,4 @@
-﻿import Link from 'next/link';
-
+import { LoadingLink } from '@/components/loading-link';
 import { StatusBadge } from '@/components/status-badge';
 import { Surface } from '@/components/dashboard-shell';
 import type { ProjectDetail, Role } from '@/lib/types';
@@ -39,22 +38,32 @@ export function ProjectCard({ project, role }: { project: ProjectDetail; role: R
         </div>
       </div>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href={'/dashboard/projects/' + project.id} className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent">
+        <LoadingLink
+          href={'/dashboard/projects/' + project.id}
+          pendingLabel="Opening project..."
+          className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-80"
+        >
           Open project
-        </Link>
+        </LoadingLink>
         {role === 'client' && project.status === 'draft' ? (
-          <Link href={'/dashboard/projects/' + project.id + '/fund'} className="rounded-full border border-blue-100 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/70">
+          <LoadingLink
+            href={'/dashboard/projects/' + project.id + '/fund'}
+            pendingLabel="Opening funding..."
+            className="rounded-full border border-blue-100 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/70 disabled:cursor-not-allowed disabled:opacity-80"
+          >
             Fund escrow
-          </Link>
+          </LoadingLink>
         ) : null}
         {role === 'provider' ? (
-          <Link href={'/dashboard/projects/' + project.id + '/payout'} className="rounded-full border border-blue-100 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/70">
-            View payout routing
-          </Link>
+          <LoadingLink
+            href={'/dashboard/projects/' + project.id + '/payout'}
+            pendingLabel="Opening payout..."
+            className="rounded-full border border-blue-100 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/70 disabled:cursor-not-allowed disabled:opacity-80"
+          >
+            View payout timing
+          </LoadingLink>
         ) : null}
       </div>
     </Surface>
   );
 }
-
-

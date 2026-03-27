@@ -1,7 +1,8 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { fundProjectAction } from '@/app/actions';
+import { PendingSubmitButton } from '@/components/pending-submit-button';
 import { Surface } from '@/components/dashboard-shell';
 import { getViewerOrRedirect } from '@/lib/auth';
 import { hydrateProject } from '@/lib/data';
@@ -35,9 +36,13 @@ export default async function FundProjectPage({ params }: { params: { id: string
         </div>
         <form action={fundProjectAction} className="mt-8">
           <input type="hidden" name="projectId" value={project.id} />
-          <button disabled={!paymentsReady} className="rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent disabled:bg-slate-300 disabled:text-slate-600">
+          <PendingSubmitButton
+            disabled={!paymentsReady}
+            pendingLabel="Starting deposit..."
+            className="rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent disabled:bg-slate-300 disabled:text-slate-600"
+          >
             {paymentsReady ? 'Initiate Interswitch deposit' : 'Funding unavailable until Interswitch activation'}
-          </button>
+          </PendingSubmitButton>
         </form>
       </Surface>
       <Surface>
@@ -54,4 +59,3 @@ export default async function FundProjectPage({ params }: { params: { id: string
     </div>
   );
 }
-

@@ -1,4 +1,3 @@
-﻿import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import {
@@ -11,7 +10,9 @@ import {
 } from '@/app/actions';
 import { ChangeOrderList } from '@/components/change-order-list';
 import { Surface } from '@/components/dashboard-shell';
+import { LoadingLink } from '@/components/loading-link';
 import { MilestoneTimeline } from '@/components/milestone-timeline';
+import { PendingSubmitButton } from '@/components/pending-submit-button';
 import { StatusBadge } from '@/components/status-badge';
 import { getViewerOrRedirect } from '@/lib/auth';
 import { hydrateProject } from '@/lib/data';
@@ -63,14 +64,23 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">Advance the contract state with confidence.</h2>
           <div className="mt-8 space-y-4">
             {isClient && project.status === 'draft' ? (
-              <Link href={'/dashboard/projects/' + project.id + '/fund'} className="block rounded-full bg-white px-4 py-3 text-center text-sm font-semibold text-blue-700 transition hover:bg-blue-50">
+              <LoadingLink
+                href={'/dashboard/projects/' + project.id + '/fund'}
+                pendingLabel="Opening funding..."
+                className="block w-full rounded-full bg-white px-4 py-3 text-center text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-80"
+              >
                 Fund escrow
-              </Link>
+              </LoadingLink>
             ) : null}
             {isClient && project.status === 'funded' ? (
               <form action={startProjectAction}>
                 <input type="hidden" name="projectId" value={project.id} />
-                <button className="w-full rounded-full bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50">Confirm work has started</button>
+                <PendingSubmitButton
+                  pendingLabel="Confirming..."
+                  className="w-full rounded-full bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-80"
+                >
+                  Confirm work has started
+                </PendingSubmitButton>
               </form>
             ) : null}
             {isClient
@@ -80,9 +90,12 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                     <form key={milestone.id} action={releaseMilestoneAction}>
                       <input type="hidden" name="projectId" value={project.id} />
                       <input type="hidden" name="milestoneId" value={milestone.id} />
-                      <button className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
+                      <PendingSubmitButton
+                        pendingLabel="Releasing..."
+                        className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-80"
+                      >
                         Release {milestone.title}
-                      </button>
+                      </PendingSubmitButton>
                     </form>
                   ))
               : null}
@@ -93,22 +106,32 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                     <form key={milestone.id} action={markMilestoneDeliveredAction}>
                       <input type="hidden" name="projectId" value={project.id} />
                       <input type="hidden" name="milestoneId" value={milestone.id} />
-                      <button className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
+                      <PendingSubmitButton
+                        pendingLabel="Updating..."
+                        className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-80"
+                      >
                         Mark {milestone.title} delivered
-                      </button>
+                      </PendingSubmitButton>
                     </form>
                   ))
               : null}
             {isProvider ? (
-              <Link href={'/dashboard/projects/' + project.id + '/payout'} className="block rounded-full border border-white/20 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/15">
-                Open payout routing
-              </Link>
+              <LoadingLink
+                href={'/dashboard/projects/' + project.id + '/payout'}
+                pendingLabel="Opening payout..."
+                className="block w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-80"
+              >
+                Open payout timing
+              </LoadingLink>
             ) : null}
             <form action={raiseDisputeAction}>
               <input type="hidden" name="projectId" value={project.id} />
-              <button className="w-full rounded-full border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
+              <PendingSubmitButton
+                pendingLabel="Submitting dispute..."
+                className="w-full rounded-full border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-80"
+              >
                 Raise dispute
-              </button>
+              </PendingSubmitButton>
             </form>
           </div>
         </Surface>
@@ -152,9 +175,12 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
               <label htmlFor="reason">Reason</label>
               <textarea id="reason" name="reason" rows={3} placeholder="Explain the scope shift or additional work requested." required />
             </div>
-            <button className="w-full rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent">
+            <PendingSubmitButton
+              pendingLabel="Submitting..."
+              className="w-full rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-80"
+            >
               Submit change order
-            </button>
+            </PendingSubmitButton>
           </form>
           {pendingChangeOrders.length > 0 ? (
             <div className="mt-6 space-y-3">
@@ -166,13 +192,23 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                       <input type="hidden" name="projectId" value={project.id} />
                       <input type="hidden" name="changeOrderId" value={changeOrder.id} />
                       <input type="hidden" name="decision" value="approve" />
-                      <button className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent">Approve</button>
+                      <PendingSubmitButton
+                        pendingLabel="Approving..."
+                        className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-80"
+                      >
+                        Approve
+                      </PendingSubmitButton>
                     </form>
                     <form action={respondToChangeOrderAction}>
                       <input type="hidden" name="projectId" value={project.id} />
                       <input type="hidden" name="changeOrderId" value={changeOrder.id} />
                       <input type="hidden" name="decision" value="reject" />
-                      <button className="rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/70">Reject</button>
+                      <PendingSubmitButton
+                        pendingLabel="Rejecting..."
+                        className="rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50/70 disabled:cursor-not-allowed disabled:opacity-80"
+                      >
+                        Reject
+                      </PendingSubmitButton>
                     </form>
                   </div>
                 </div>
@@ -192,4 +228,3 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     </div>
   );
 }
-
