@@ -78,6 +78,7 @@ export interface Milestone {
   dueDate: string | null;
   orderIndex: number;
   deliveredAt: string | null;
+  confirmedAt: string | null;
 }
 
 export interface ChangeOrder {

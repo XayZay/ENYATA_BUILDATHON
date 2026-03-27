@@ -55,9 +55,9 @@ export default async function DashboardPage() {
               accent={<span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700">Pipeline</span>}
             />
             <SummaryCard
-              eyebrow="Pending delivery"
+              eyebrow="Awaiting confirmation"
               value={String(snapshot.pendingDeliveries)}
-              detail="Funded milestones that still need a delivery update from you."
+              detail="Funded milestones that are still waiting for client acknowledgement before release."
               accent={<span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Action</span>}
             />
             <SummaryCard
@@ -120,7 +120,7 @@ export default async function DashboardPage() {
 
   const draftProjects = projects.filter((project) => project.status === 'draft').length;
   const pendingApprovals = projects.flatMap((project) => project.changeOrders).filter((changeOrder) => changeOrder.status !== 'rejected' && changeOrder.status !== 'fully_approved').length;
-  const readyForRelease = projects.flatMap((project) => project.milestones).filter((milestone) => milestone.status === 'funded' && milestone.deliveredAt).length;
+  const readyForRelease = projects.flatMap((project) => project.milestones).filter((milestone) => milestone.status === 'funded' && milestone.confirmedAt).length;
 
   return (
     <div className="space-y-8">
@@ -131,7 +131,7 @@ export default async function DashboardPage() {
             Fund work safely, approve scope deliberately, and release only when the right outcome arrives.
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-8 text-slate-600">
-            This view is tuned for client control: what still needs funding, what change order is waiting on you, and which delivered milestone is ready to move into payout.
+            This view is tuned for client control: what still needs funding, what change order is waiting on you, and which confirmed milestone is ready to move into payout.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link href="/dashboard/projects/new" className="rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(37,99,235,0.18)] transition hover:bg-accent">
@@ -157,11 +157,11 @@ export default async function DashboardPage() {
             accent={<span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Review</span>}
           />
           <SummaryCard
-            eyebrow="Ready for release"
-            value={String(readyForRelease)}
-            detail="Delivered milestones that are waiting for a release decision."
-            accent={<span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Release</span>}
-          />
+              eyebrow="Ready for release"
+              value={String(readyForRelease)}
+              detail="Client-confirmed milestones that are waiting for a release decision."
+              accent={<span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Release</span>}
+            />
         </div>
       </section>
 

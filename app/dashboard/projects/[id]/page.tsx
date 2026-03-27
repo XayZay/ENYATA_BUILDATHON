@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 
 import {
-  markMilestoneDeliveredAction,
+  acceptProjectAction,
+  confirmMilestoneReachedAction,
   raiseDisputeAction,
   releaseMilestoneAction,
   respondToChangeOrderAction,
@@ -63,7 +64,18 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Project actions</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight">Advance the contract state with confidence.</h2>
           <div className="mt-8 space-y-4">
-            {isClient && project.status === 'draft' ? (
+            {isProvider && project.status === 'draft' ? (
+              <form action={acceptProjectAction}>
+                <input type="hidden" name="projectId" value={project.id} />
+                <PendingSubmitButton
+                  pendingLabel="Approving project..."
+                  className="w-full rounded-full bg-white px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-80"
+                >
+                  Approve project and start work
+                </PendingSubmitButton>
+              </form>
+            ) : null}
+            {isClient && project.milestones.some((milestone) => milestone.status === 'pending') ? (
               <LoadingLink
                 href={'/dashboard/projects/' + project.id + '/fund'}
                 pendingLabel="Opening funding..."
@@ -85,7 +97,23 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             ) : null}
             {isClient
               ? project.milestones
-                  .filter((milestone) => milestone.status === 'funded' && milestone.deliveredAt)
+                  .filter((milestone) => milestone.status === 'funded' && !milestone.confirmedAt)
+                  .map((milestone) => (
+                    <form key={milestone.id} action={confirmMilestoneReachedAction}>
+                      <input type="hidden" name="projectId" value={project.id} />
+                      <input type="hidden" name="milestoneId" value={milestone.id} />
+                      <PendingSubmitButton
+                        pendingLabel="Acknowledging..."
+                        className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-80"
+                      >
+                        Mark {milestone.title} as reached
+                      </PendingSubmitButton>
+                    </form>
+                  ))
+              : null}
+            {isClient
+              ? project.milestones
+                  .filter((milestone) => milestone.status === 'funded' && milestone.confirmedAt)
                   .map((milestone) => (
                     <form key={milestone.id} action={releaseMilestoneAction}>
                       <input type="hidden" name="projectId" value={project.id} />
@@ -95,22 +123,6 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                         className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-80"
                       >
                         Release {milestone.title}
-                      </PendingSubmitButton>
-                    </form>
-                  ))
-              : null}
-            {isProvider
-              ? project.milestones
-                  .filter((milestone) => milestone.status === 'funded' && !milestone.deliveredAt)
-                  .map((milestone) => (
-                    <form key={milestone.id} action={markMilestoneDeliveredAction}>
-                      <input type="hidden" name="projectId" value={project.id} />
-                      <input type="hidden" name="milestoneId" value={milestone.id} />
-                      <PendingSubmitButton
-                        pendingLabel="Updating..."
-                        className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-80"
-                      >
-                        Mark {milestone.title} delivered
                       </PendingSubmitButton>
                     </form>
                   ))

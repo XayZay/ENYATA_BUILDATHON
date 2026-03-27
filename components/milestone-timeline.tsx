@@ -20,10 +20,16 @@ export function MilestoneTimeline({ milestones }: { milestones: Milestone[] }) {
             </div>
           </div>
           <div className="mt-5 h-1.5 rounded-full bg-blue-50">
-            <div className={`h-1.5 rounded-full ${milestone.status === 'released' ? 'w-full bg-emerald-500' : milestone.deliveredAt ? 'w-4/5 bg-blue-500' : milestone.status === 'funded' ? 'w-2/5 bg-blue-300' : 'w-1/5 bg-slate-300'}`} />
+            <div className={`h-1.5 rounded-full ${milestone.status === 'released' ? 'w-full bg-emerald-500' : milestone.confirmedAt ? 'w-[90%] bg-blue-600' : milestone.status === 'funded' ? 'w-2/5 bg-blue-300' : 'w-1/5 bg-slate-300'}`} />
           </div>
           <p className="mt-4 text-sm text-slate-500">
-            {milestone.deliveredAt ? 'Provider marked this milestone delivered and it is ready for client review.' : 'Awaiting provider delivery update.'}
+            {milestone.status === 'released'
+              ? 'Funds have been released for this milestone.'
+              : milestone.confirmedAt
+                ? 'Client confirmed this milestone has been reached and it is ready for release.'
+                : milestone.status === 'funded'
+                  ? 'Awaiting client acknowledgement that this milestone has been reached.'
+                  : 'This milestone is waiting for escrow funding.'}
           </p>
         </div>
       ))}
