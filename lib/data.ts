@@ -54,6 +54,10 @@ function createProviderCode(userId: string) {
   return 'CR-' + userId.slice(0, 4).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
 }
 
+function createDemoInterswitchReference(prefix: string) {
+  return 'ISW-DEMO-' + prefix + '-' + Date.now().toString().slice(-8);
+}
+
 function isProviderProfilesUnavailable(error: unknown) {
   if (!error || typeof error !== 'object') {
     return false;
@@ -65,6 +69,16 @@ function isProviderProfilesUnavailable(error: unknown) {
 
 function getProviderProfilesUnavailableMessage() {
   return 'Provider profile search is still warming up. If you just ran the migration, refresh Supabase and try again. You can still use the provider email right now.';
+}
+
+function isMilestoneConfirmationUnavailable(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const candidate = error as { message?: string; details?: string; hint?: string; code?: string };
+  const combined = [candidate.message, candidate.details, candidate.hint].filter(Boolean).join(' ').toLowerCase();
+  return combined.includes('confirmed_at');
 }
 
 function mapUser(row: any): User {
@@ -117,7 +131,8 @@ function mapMilestone(row: any): Milestone {
     status: row.status,
     dueDate: row.due_date,
     orderIndex: row.order_index,
-    deliveredAt: row.delivered_at
+    deliveredAt: row.delivered_at,
+    confirmedAt: row.confirmed_at ?? row.delivered_at ?? null
   };
 }
 
@@ -527,7 +542,7 @@ export async function getProviderDashboardSnapshot(viewer: ViewerSession): Promi
     .reduce((sum, milestone) => sum + milestone.amountUsd, 0);
   const pendingDeliveries = projects
     .flatMap((project) => project.milestones)
-    .filter((milestone) => milestone.status === 'funded' && !milestone.deliveredAt).length;
+    .filter((milestone) => milestone.status === 'funded' && !milestone.confirmedAt).length;
   const awaitingFunding = projects.filter((project) => project.status === 'draft' || project.status === 'funded').length;
   const rateInfo = await getUsdToNgnRate();
   const options = await buildRoutingOptions(Math.max(releasedUsd, 100), isInterswitchConfigured());
@@ -601,16 +616,80 @@ export async function createProject(input: CreateProjectInput, viewer: ViewerSes
 }
 
 export async function fundProject(projectId: string, viewer: ViewerSession) {
-  if (!isInterswitchConfigured()) {
-    throw new Error('Interswitch integration is not configured yet. Funding is blocked until activation is complete.');
-  }
-
   const project = await getAuthorizedProject(projectId, viewer);
   if (viewer.role !== 'client' || project.clientId !== viewer.userId) {
     throw new Error('Only the client can fund this project');
   }
 
-  throw new Error('Interswitch funding flow is waiting for account activation details.');
+  if (project.status === 'completed' || project.status === 'disputed') {
+    throw new Error('This project can no longer be funded.');
+  }
+
+  const supabase = createAdminClient();
+  const { data: milestoneRows, error: milestoneError } = await supabase.from('milestones').select('*').eq('project_id', projectId);
+  assertError(milestoneError);
+  const milestones = (milestoneRows ?? []).map(mapMilestone);
+
+  if (milestones.length === 0) {
+    throw new Error('Add milestones before funding escrow.');
+  }
+
+  const alreadyFunded = milestones.every((milestone) => milestone.status !== 'pending');
+  if (alreadyFunded) {
+    throw new Error('Escrow is already funded for this project.');
+  }
+
+  const interswitchReference = createDemoInterswitchReference('DEP');
+  const { error: milestoneUpdateError } = await supabase
+    .from('milestones')
+    .update({ status: 'funded' })
+    .eq('project_id', projectId)
+    .eq('status', 'pending');
+  assertError(milestoneUpdateError);
+
+  const nextStatus = project.status === 'in_progress' ? 'in_progress' : 'funded';
+  const { error: projectError } = await supabase.from('projects').update({ status: nextStatus }).eq('id', projectId);
+  assertError(projectError);
+
+  const { error: transactionError } = await supabase.from('transactions').insert({
+    project_id: projectId,
+    milestone_id: null,
+    type: 'deposit',
+    amount_usd: project.totalAmountUsd,
+    status: 'completed',
+    interswitch_reference: interswitchReference
+  });
+  assertError(transactionError);
+
+  await Promise.all([
+    notify(project.clientId, 'Escrow funded via demo Interswitch flow for ' + project.title + '.', '/dashboard/projects/' + projectId),
+    notify(project.providerId, 'Escrow funded and ready for work on ' + project.title + '.', '/dashboard/projects/' + projectId)
+  ]);
+
+  return hydrateProject(projectId, viewer);
+}
+
+export async function acceptProject(projectId: string, viewer: ViewerSession) {
+  const project = await getAuthorizedProject(projectId, viewer);
+  if (viewer.role !== 'provider' || project.providerId !== viewer.userId) {
+    throw new Error('Only the provider can approve this project');
+  }
+
+  if (project.status !== 'draft' && project.status !== 'funded') {
+    throw new Error('This project is no longer awaiting provider approval.');
+  }
+
+  const supabase = createAdminClient();
+  const nextStatus = project.status === 'funded' ? 'in_progress' : 'in_progress';
+  const { error } = await supabase.from('projects').update({ status: nextStatus }).eq('id', projectId);
+  assertError(error);
+
+  await Promise.all([
+    notify(project.providerId, 'You approved ' + project.title + '.', '/dashboard/projects/' + projectId),
+    notify(project.clientId, 'Provider approved ' + project.title + ' and work can move forward.', '/dashboard/projects/' + projectId)
+  ]);
+
+  return hydrateProject(projectId, viewer);
 }
 
 export async function startProject(projectId: string, viewer: ViewerSession) {
@@ -642,24 +721,39 @@ export async function raiseDispute(projectId: string, viewer: ViewerSession) {
   return hydrateProject(projectId, viewer);
 }
 
-export async function markMilestoneDelivered(projectId: string, milestoneId: string, viewer: ViewerSession) {
+export async function confirmMilestoneReached(projectId: string, milestoneId: string, viewer: ViewerSession) {
   const project = await getAuthorizedProject(projectId, viewer);
-  if (viewer.role !== 'provider' || project.providerId !== viewer.userId) {
-    throw new Error('Only the provider can mark delivery');
+  if (viewer.role !== 'client' || project.clientId !== viewer.userId) {
+    throw new Error('Only the client can confirm milestone completion');
   }
 
   const supabase = createAdminClient();
+  const timestamp = new Date().toISOString();
   const { data, error } = await supabase
     .from('milestones')
-    .update({ delivered_at: new Date().toISOString() })
+    .update({ delivered_at: timestamp, confirmed_at: timestamp })
     .eq('id', milestoneId)
     .eq('project_id', projectId)
     .select('*')
     .single();
+
+  if (isMilestoneConfirmationUnavailable(error)) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('milestones')
+      .update({ delivered_at: timestamp })
+      .eq('id', milestoneId)
+      .eq('project_id', projectId)
+      .select('*')
+      .single();
+    assertError(fallbackError);
+
+    await notify(project.providerId, fallbackData.title + ' was acknowledged by the client and is ready for release.', '/dashboard/projects/' + projectId);
+    return mapMilestone(fallbackData);
+  }
+
   assertError(error);
 
-  await supabase.from('projects').update({ status: 'in_progress' }).eq('id', projectId);
-  await notify(project.clientId, data.title + ' was marked delivered.', '/dashboard/projects/' + projectId);
+  await notify(project.providerId, data.title + ' was acknowledged by the client and is ready for release.', '/dashboard/projects/' + projectId);
   return mapMilestone(data);
 }
 
@@ -670,6 +764,19 @@ export async function releaseMilestone(projectId: string, milestoneId: string, v
   }
 
   const supabase = createAdminClient();
+  const { data: currentMilestoneRow, error: currentMilestoneError } = await supabase
+    .from('milestones')
+    .select('*')
+    .eq('id', milestoneId)
+    .eq('project_id', projectId)
+    .single();
+  assertError(currentMilestoneError);
+
+  const currentMilestone = mapMilestone(currentMilestoneRow);
+  if (!currentMilestone.confirmedAt) {
+    throw new Error('Confirm the milestone has been reached before releasing funds.');
+  }
+
   const { data: milestoneRow, error: milestoneError } = await supabase
     .from('milestones')
     .update({ status: 'released' })

@@ -5,11 +5,12 @@ import { redirect } from 'next/navigation';
 
 import { getViewerOrRedirect, getOptionalViewer } from '@/lib/auth';
 import {
+  acceptProject,
+  confirmMilestoneReached,
   createProject,
   fundProject,
   getProviderProfile,
   logPayoutSelection,
-  markMilestoneDelivered,
   markNotificationRead,
   raiseDispute,
   releaseMilestone,
@@ -150,6 +151,15 @@ export async function fundProjectAction(formData: FormData) {
   revalidatePath('/dashboard');
 }
 
+export async function acceptProjectAction(formData: FormData) {
+  const viewer = await getViewerOrRedirect();
+  const projectId = requireValue(formData, 'projectId');
+  await acceptProject(projectId, viewer);
+  revalidatePath('/dashboard/projects/' + projectId);
+  revalidatePath('/dashboard/projects');
+  revalidatePath('/dashboard');
+}
+
 export async function startProjectAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const projectId = requireValue(formData, 'projectId');
@@ -166,14 +176,6 @@ export async function raiseDisputeAction(formData: FormData) {
   revalidatePath('/dashboard');
 }
 
-export async function markMilestoneDeliveredAction(formData: FormData) {
-  const viewer = await getViewerOrRedirect();
-  const projectId = requireValue(formData, 'projectId');
-  const milestoneId = requireValue(formData, 'milestoneId');
-  await markMilestoneDelivered(projectId, milestoneId, viewer);
-  revalidatePath('/dashboard/projects/' + projectId);
-}
-
 export async function releaseMilestoneAction(formData: FormData) {
   const viewer = await getViewerOrRedirect();
   const projectId = requireValue(formData, 'projectId');
@@ -181,6 +183,15 @@ export async function releaseMilestoneAction(formData: FormData) {
   await releaseMilestone(projectId, milestoneId, viewer);
   revalidatePath('/dashboard/projects/' + projectId);
   revalidatePath('/dashboard/projects/' + projectId + '/payout');
+  revalidatePath('/dashboard');
+}
+
+export async function confirmMilestoneReachedAction(formData: FormData) {
+  const viewer = await getViewerOrRedirect();
+  const projectId = requireValue(formData, 'projectId');
+  const milestoneId = requireValue(formData, 'milestoneId');
+  await confirmMilestoneReached(projectId, milestoneId, viewer);
+  revalidatePath('/dashboard/projects/' + projectId);
   revalidatePath('/dashboard');
 }
 

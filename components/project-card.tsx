@@ -45,7 +45,7 @@ export function ProjectCard({ project, role }: { project: ProjectDetail; role: R
         >
           Open project
         </LoadingLink>
-        {role === 'client' && project.status === 'draft' ? (
+        {role === 'client' && project.milestones.some((milestone) => milestone.status === 'pending') ? (
           <LoadingLink
             href={'/dashboard/projects/' + project.id + '/fund'}
             pendingLabel="Opening funding..."
