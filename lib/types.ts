@@ -17,7 +17,7 @@ export type ChangeOrderStatus =
   | 'approved_provider'
   | 'fully_approved'
   | 'rejected';
-export type PayoutPlatform = 'interswitch' | 'wise' | 'grey' | 'payoneer' | 'quidax';
+export type PayoutPlatform = 'interswitch' | 'cleva' | 'grey' | 'payoneer' | 'quidax';
 export type PayoutStatus = 'pending' | 'processing' | 'completed';
 
 export interface User {

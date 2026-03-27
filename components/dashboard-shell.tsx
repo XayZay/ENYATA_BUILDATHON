@@ -23,7 +23,7 @@ export function DashboardShell({ roleLabel, viewerName, unreadNotifications, pro
   return (
     <div className="min-h-screen bg-mist text-ink">
       <div className="mx-auto flex max-w-[1550px] gap-6 px-4 py-4 lg:px-6 lg:py-6">
-        <aside className="hidden w-[286px] shrink-0 flex-col rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-soft backdrop-blur lg:flex">
+        <aside className="hidden w-[286px] min-h-full shrink-0 flex-col rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-soft backdrop-blur lg:flex">
           <Link href="/dashboard" className="block">
             <p className="text-3xl font-semibold tracking-tight text-accent">CrossRoute</p>
             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Escrow and payout routing</p>

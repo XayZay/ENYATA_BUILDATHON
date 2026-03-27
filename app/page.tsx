@@ -4,14 +4,13 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-mist text-ink">
       <section className="mx-auto max-w-[1500px] px-6 py-8">
-        <header className="glass-panel flex flex-wrap items-center justify-between gap-4 px-6 py-4">
+        <header className="glass-panel flex flex-col lg:flex-row flex-wrap lg:items-center justify-between gap-4 px-6 py-4">
           <div>
             <p className="text-2xl font-semibold tracking-tight text-accent">CrossRoute</p>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Global freelance escrow infrastructure</p>
           </div>
-          <nav className="flex items-center gap-3 text-sm text-slate-600">
-            <Link href="#product" className="rounded-full px-4 py-2 transition hover:bg-blue-50 hover:text-blue-700">Product</Link>
-            <Link href="#roles" className="rounded-full px-4 py-2 transition hover:bg-blue-50 hover:text-blue-700">Roles</Link>
+          <nav className="flex items-center -ml-4   gap-3 text-sm text-slate-600">
+            <Link href="#roles" className=" rounded-full px-4 py-2 transition hover:bg-blue-50 hover:text-blue-700">Roles</Link>
             <Link href="/auth/login" className="rounded-full px-4 py-2 transition hover:bg-blue-50 hover:text-blue-700">Login</Link>
             <Link href="/auth/signup?role=client" className="rounded-full bg-brand px-5 py-2.5 font-semibold text-white shadow-[0_16px_40px_rgba(37,99,235,0.24)] transition hover:bg-accent">Get Started</Link>
           </nav>
@@ -20,7 +19,7 @@ export default function HomePage() {
         <div className="grid gap-8 py-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
           <div>
             <p className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-blue-700">
-              Built for Nigeria ? World payments
+              Built for Dollar to Naira Payments
             </p>
             <h1 className="mt-8 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-tight text-slate-950 sm:text-6xl">
               Protect global freelance work with dynamic escrow and smarter FX routing.

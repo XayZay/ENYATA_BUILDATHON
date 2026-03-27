@@ -14,11 +14,9 @@ export default function LoginPage({ searchParams }: { searchParams?: { error?: s
               <h1 className="mt-16 max-w-xl text-5xl font-semibold leading-[1.02] tracking-tight">
                 Sign in to manage global projects, approvals, and payout routes.
               </h1>
-              <p className="mt-6 max-w-lg text-base leading-8 text-blue-100">
-                CrossRoute is now wired to real Supabase auth. Use the same account you created during signup to enter your live workspace.
-              </p>
+             
             </div>
-            <div className="rounded-[1.7rem] border border-white/20 bg-white/12 p-6 backdrop-blur">
+            <div className="rounded-[1.7rem] border border-white/20 bg-white/12 p-6 backdrop-blur mt-6 lg:mt-10">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Why this matters</p>
               <p className="mt-3 text-2xl font-semibold tracking-tight">One place for identity, escrow, and payout intelligence.</p>
               <p className="mt-4 text-sm leading-7 text-blue-100">

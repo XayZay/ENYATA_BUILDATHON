@@ -24,7 +24,7 @@ export default function SignupPage({ searchParams }: { searchParams?: { error?: 
                   : 'Clients sign up first, then create projects by selecting providers inside CrossRoute with milestone-based funding terms.'}
               </p>
             </div>
-            <div className="rounded-[1.7rem] border border-white/20 bg-white/12 p-6 backdrop-blur">
+            <div className="rounded-[1.7rem] border border-white/20 bg-white/12 p-6 backdrop-blur mt-4 xl:-mt-10 ">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Account type</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <Link href="/auth/signup?role=client" className={`rounded-[1.3rem] border px-4 py-4 text-sm font-semibold transition ${selectedRole === 'client' ? 'border-white bg-white text-blue-700' : 'border-white/20 bg-white/10 text-white hover:bg-white/15'}`}>

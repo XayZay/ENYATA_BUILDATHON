@@ -1,4 +1,4 @@
-﻿import type { Config } from 'tailwindcss';
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
@@ -26,7 +26,7 @@ const config: Config = {
         xl2: '1.5rem'
       },
       fontFamily: {
-        sans: ['Aptos', 'Segoe UI', 'system-ui', 'sans-serif']
+        sans: ['var(--font-sans)', 'Aptos', 'Segoe UI', 'system-ui', 'sans-serif']
       }
     }
   },
@@ -34,4 +34,3 @@ const config: Config = {
 };
 
 export default config;
-

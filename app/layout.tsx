@@ -1,7 +1,24 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import localFont from 'next/font/local';
 
 import '@/app/globals.css';
+
+const satoshi = localFont({
+  src: [
+    {
+      path: '../fonts/Satoshi-Variable.woff2',
+      weight: '300 900',
+      style: 'normal'
+    },
+    {
+      path: '../fonts/Satoshi-VariableItalic.woff2',
+      weight: '300 900',
+      style: 'italic'
+    }
+  ],
+  variable: '--font-sans',
+  display: 'swap'
+});
 
 export const metadata: Metadata = {
   title: 'CrossRoute',
@@ -10,16 +27,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className={satoshi.variable}>
+      <body className="font-sans">
         {children}
         <footer className="border-t border-line bg-white/80">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-6 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
+          <div className="mx-auto flex max-w-7xl items-center justify-center py-4 sm:text-sm text-xs text-slate-500">
             <p>CrossRoute MVP foundation for the Interswitch x Enyata hackathon.</p>
-            <div className="flex gap-4">
-              <Link href="/auth/login">Login</Link>
-              <Link href="/auth/signup">Signup</Link>
-            </div>
           </div>
         </footer>
       </body>
